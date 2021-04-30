@@ -11,13 +11,12 @@ The second part of the project consist of the hardware as follows:
 + Adafruit servo driver. I used PCA9685.
 
 Running the project
-+ Step 1
-    + Clone this repository
-    + Install the dependencies
-    + Run the code
++ Step 1 - Clone this repository
++ Step 2 - Install the dependencies
++ Step 3 - Run the code
 
 To validate communication via I2C
-    + Attach the logic power pins and the SCL/SDA pins from the driver to the board
-    + Power the driver 
-    + Use the following command: i2cdetect -y -r 1
-    + Check for a valid positive output message
++ Attach the logic power pins and the SCL/SDA pins from the driver to the board
++ Power the driver 
++ Use the following command: i2cdetect -y -r 1
++ Check for a valid positive output message
