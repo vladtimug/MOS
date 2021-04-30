@@ -47,11 +47,10 @@ class MainWindow(QWidget):
         super(MainWindow, self).__init__()
 
     # Size, Title & Background Config
-        # self.resize(1000,500)
         self.setFixedWidth(1000)
         self.setFixedHeight(500)
         self.setStyleSheet("background-color: rgb(97,97,97);")
-        self.setWindowTitle("Control Panel")
+        self.setWindowTitle("MESS")
 
     # Config Layout
         self.HBL1 = QHBoxLayout()
@@ -112,7 +111,7 @@ class MainWindow(QWidget):
         # Manual Selection button
         self.manSelect = QPushButton("Manual Selection", self)
         self.manSelect.setCheckable(True)
-        self.manSelect.setStyleSheet("background-color: lightgrey")
+        # self.manSelect.setStyleSheet("background-color: lightgrey")
         self.SnapshotBTN.setFixedSize(QSize(150,30))
         self.manSelect.clicked.connect(self.changeColor)
         self.HBL6.addWidget(self.manSelect)
