@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from adafruit_servokit import ServoKit
 import time
 import argparse
