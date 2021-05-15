@@ -1,8 +1,9 @@
-# This script tests various methods for object tracking through frames.argparse
+# This script tests various methods for object tracking through frames
 # A manual selection operation of the target object is needed
-
+import nanocamera as nano
 import cv2 as cv
-import argparse
+camera = nano.Camera()
+# import argparse
 
 # argumentParser = argparse.ArgumentParser()
 # argumentParser.add_argument("-t", "--tracker", type=str, default="MOSSE", help="Type of tracker")
@@ -22,17 +23,17 @@ def drawRectangleFromBbox(frame, bbox):
 #     # "medianflow": cv.TrackerMedianFlow_create,
 #     # "mosse": cv.TrackerMOSSE_create
 # }
-cap = cv.VideoCapture(0)
-retVal, frame= cap.read()
+# cap = cv.VideoCapture(0)
+frame= camera.read()
 bbox = cv.selectROI("Live Stream", frame, False)
 
 # tracker = OPENCV_OBJECT_TRACKERS[trackerArgs["tracker"]]()
-tracker = cv.TrackerMOSSE_create()
+tracker = cv.TrackerKCF_create()
 tracker.init(frame, bbox)
 
-while cap.isOpened() :
+while camera.isReady() :
     timer = cv.getTickCount()
-    retVal, frame= cap.read()
+    frame= camera.read()
 
     retVal, bbox = tracker.update(frame)
     
@@ -47,5 +48,6 @@ while cap.isOpened() :
     if cv.waitKey(1) == 27:
         break
 
-cap.release()
+# cap.release()
+del camera
 cv.destroyAllWindows()
