@@ -3,9 +3,10 @@ import argparse
 import time
 import cv2 as cv
 import os
+import nanocamera as nano
 
 argumentsParser = argparse.ArgumentParser()
-argumentsParser.add_argument("-i", "--image", required=True, help="Path to input imamge")
+argumentsParser.add_argument("-i", "--image", help="Path to input imamge")
 argumentsParser.add_argument("-y", "--yolo", required=True, help="base path to yolo directory")
 argumentsParser.add_argument("-c", "--confidence", type=float, default=0.5, help="Minimum probability to filter weak detections")
 argumentsParser.add_argument("-t", "--threshold", type=float, default=0.3, help="Threshold when applying non-max suppresion")
@@ -38,12 +39,13 @@ net = cv.dnn.readNetFromDarknet(configPath, weightsPath)
 ln = net.getLayerNames()
 ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
-cap = cv.VideoCapture(0)
-ret, image = cap.read()
+# cap = cv.VideoCapture(0)
+camera = nano.Camera()
+image = camera.read()
 (H, W) = image.shape[:2]
 
-while cap.isOpened():
-    ret, image = cap.read()
+while camera.isReady():
+    image = camera.read()
     blob = cv.dnn.blobFromImage(image, 1/255.0, (416, 416), swapRB=True, crop=False)
     net.setInput(blob)
     start = time.time()
@@ -90,5 +92,5 @@ while cap.isOpened():
     if cv.waitKey(1) == 27:
         break
 
-cap.release()
+del camera
 cv.destroyAllWindows()
