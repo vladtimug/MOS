@@ -5,42 +5,17 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import cv2 as cv
-from tools import camDetect
-from adafruit_servokit import ServoKit
-
-def gstreamer_pipeline(
-    capture_width=1280,
-    capture_height=720,
-    display_width=680,
-    display_height=460,
-    framerate=20,
-    flip_method=0,
-):
-    return (
-        "nvarguscamerasrc ! "
-        "video/x-raw(memory:NVMM), "
-        "width=(int)%d, height=(int)%d, "
-        "format=(string)NV12, framerate=(fraction)%d/1 ! "
-        "nvvidconv flip-method=%d ! "
-        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
-        "videoconvert ! "
-        "video/x-raw, format=(string)BGR ! appsink"
-        % (
-            capture_width,
-            capture_height,
-            framerate,
-            flip_method,
-            display_width,
-            display_height,
-        )
-    )
+# from adafruit_servokit import ServoKit
+import nanocamera as nano
+import numpy as np
 
 # Servo setup
-myKit = ServoKit(channels = 16)
-tiltMotor = myKit.servo[14]		# Tilt motor
-panMotor = myKit.servo[15]		# Pan motor
+# myKit = ServoKit(channels = 16)
+# tiltMotor = myKit.servo[14]		# Tilt motor
+# panMotor = myKit.servo[15]		# Pan motor
 
 # Create main window
+# TODO Check out https://github.com/kadir014/pyqt5-custom-widgets to enhance UI
 class MainWindow(QWidget):
     def __init__(self):
         # Inherit from QWidget Obj. Super returns the parrent object -> in this case a Qwidget obj
@@ -139,7 +114,7 @@ class MainWindow(QWidget):
             self.VBL3.addWidget(self.servo1_line)
 
         # Display slider1 value & modify servo angle
-            self.servo1.valueChanged.connect(self.v_change_servo1)
+            # self.servo1.valueChanged.connect(self.v_change_servo1)
             
         # Slider 2 - Tilt
             self.label_servo2 = QLabel("Tilt Servo Control")
@@ -163,7 +138,7 @@ class MainWindow(QWidget):
             self.VBL4.addWidget(self.servo2_line)
         
         # Display slider2 value & modify servo angle
-            self.servo2.valueChanged.connect(self.v_change_servo2)
+            # self.servo2.valueChanged.connect(self.v_change_servo2)
 
         # Combine horizontal and vertical layout
             # 1) Vertially Stack Feed_Label and Pushbuttons
@@ -223,11 +198,11 @@ class Worker1(QThread):
     ImageUpdate = pyqtSignal(QImage)
     def run(self):
         self.ThreadActive = True
-        Capture = cv.VideoCapture(gstreamer_pipeline(flip_method=0), cv.CAP_GSTREAMER)
-        if Capture.isOpened():
+        Capture = nano.Camera()
+        if Capture.isReady():
             while self.ThreadActive:
-                ret, frame = Capture.read()
-                if ret:
+                frame = Capture.read()
+                if np.sum(frame) != 0:
                     Image = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
                     FlippedImage = cv.flip(Image, 1)
                     Convert2QtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0], QImage.Format_RGB888)
@@ -235,11 +210,17 @@ class Worker1(QThread):
                     self.ImageUpdate.emit(Pic)
                 else:
                     print("Error while reading frame. Cannot load empty frame. Exist Status -1.")
+                    self.finished.emit()
         else:
             print("Error opening VideoCapture obj. Exit status -2.")
+            self.finished.emit()
+    
     def stop(self):
         self.ThreadActive = False
         self.quit()
+    
+    # def cameraDisplay(self):
+
 
 if __name__ == '__main__':
     App = QApplication(sys.argv)
