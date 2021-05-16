@@ -1,6 +1,4 @@
-MESS
-
-Mechatronic surveilance system - Bachelors Final Year Project
+MOS - Mechatronic Orientation System for Mobile Robots
 
 This app is only the software component of the project.
 The second part of the project consist of the hardware as follows:
