@@ -6,8 +6,8 @@ import os
 import nanocamera as nano
 
 argumentsParser = argparse.ArgumentParser()
-argumentsParser.add_argument("-i", "--image", help="Path to input imamge")
-argumentsParser.add_argument("-y", "--yolo", required=True, help="base path to yolo directory")
+argumentsParser.add_argument("-g", "--gpu", type=int, default=0, help="Flag to run inference on GPU instead of CPU. 1 - inference on GPU, 0 - inference on CPU. Default is 0.")
+argumentsParser.add_argument("-y", "--yolo", required=True, help="Base path to yolo directory")
 argumentsParser.add_argument("-c", "--confidence", type=float, default=0.5, help="Minimum probability to filter weak detections")
 argumentsParser.add_argument("-t", "--threshold", type=float, default=0.3, help="Threshold when applying non-max suppresion")
 arguments = vars(argumentsParser.parse_args())
@@ -32,9 +32,15 @@ weightsPath = os.path.sep.join([arguments["yolo"], "yolov4-tiny.weights"])
 # TODO check for succesfully loaded file using os library
 configPath = os.path.sep.join([arguments["yolo"], "yolov4-tiny.cfg"])
 
-print("[INFO] Loading YOLO from disk\n")
+print("[INFO] Loading YOLO from disk")
 # TODO check for succesfully loaded file
 net = cv.dnn.readNetFromDarknet(configPath, weightsPath)
+if arguments["gpu"]:
+    print("[INFO] Inference on GPU\n")
+    net.setPreferableBackend(cv.dnn.DNN_BACKEND_CUDA)
+    net.setPreferableTarget(cv.dnn.DNN_TARGET_CUDA)
+else:
+    print("[INFO] Inference on CPU\n")
 
 ln = net.getLayerNames()
 ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
