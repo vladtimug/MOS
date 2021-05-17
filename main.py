@@ -6,8 +6,10 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import cv2 as cv
 # from adafruit_servokit import ServoKit
-import nanocamera as nano
+# import nanocamera as nano
 import numpy as np
+import jetson.inference
+import jetson.utils
 
 # Servo setup
 # myKit = ServoKit(channels = 16)
@@ -193,19 +195,27 @@ class MainWindow(QWidget):
             cv.namedWindow("CSI Camera", cv.WINDOW_NORMAL)
         else:
             self.manSelect.setStyleSheet("background-color: lightgrey")
-    
+
+# TODO Create similar class for object detection or create different run functions
 class Worker1(QThread):
     ImageUpdate = pyqtSignal(QImage)
     def run(self):
         self.ThreadActive = True
-        Capture = nano.Camera()
-        if Capture.isReady():
-            while self.ThreadActive:
-                frame = Capture.read()
+        # Capture = nano.Camera()
+        # camera = jetson.utils.gstCamera(1280, 720, "0")
+        # display = jetson.utils.glDisplay()
+        camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
+        display = jetson.utils.videoOutput("display://0")
+        if camera != None:
+            while self.ThreadActive and display.IsStreaming():
+                frame = camera.Capture()
+                # frame0, widht, height = camera.CaptureRGBA(zeroCopy = True)
+                # jetson.utils.cudaDeviceSynchronize()
+                frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
                 if np.sum(frame) != 0:
-                    Image = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-                    FlippedImage = cv.flip(Image, 1)
-                    Convert2QtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0], QImage.Format_RGB888)
+                    cvFrame = cv.cvtColor(frame.astype(np.uint8), cv.COLOR_BGR2RGB)
+                    # FlippedImage = cv.flip(Image, 0)
+                    Convert2QtFormat = QImage(cvFrame.data, cvFrame.shape[1], cvFrame.shape[0], QImage.Format_RGB888)
                     Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
                     self.ImageUpdate.emit(Pic)
                 else:
