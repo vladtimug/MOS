@@ -6,8 +6,10 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import cv2 as cv
 # from adafruit_servokit import ServoKit
-import nanocamera as nano
 import numpy as np
+import jetson.inference
+import jetson.utils
+from pyqt5Custom import ToggleSwitch
 
 # Servo setup
 # myKit = ServoKit(channels = 16)
@@ -34,6 +36,9 @@ class MainWindow(QWidget):
             self.HBL4 = QHBoxLayout()
             self.HBL5 = QHBoxLayout()
             self.HBL6 = QHBoxLayout()
+            self.HBL7 = QHBoxLayout()
+            self.HBL8 = QHBoxLayout()
+            self.HBL9 = QHBoxLayout()
             self.VBL1 = QVBoxLayout()
             self.VBL2 = QVBoxLayout()
             self.VBL3 = QVBoxLayout()
@@ -140,6 +145,20 @@ class MainWindow(QWidget):
         # Display slider2 value & modify servo angle
             # self.servo2.valueChanged.connect(self.v_change_servo2)
 
+        # Toggle for activating/deactivating manual target selection feature
+            self.manualSelectionToggle = ToggleSwitch(text="    Manual Target Selection", style="android")
+            if self.manualSelectionToggle.MouseButtonPress():
+                self.sliderCallback()
+            self.HBL7.addWidget(self.manualSelectionToggle)
+
+        # Toggle for activating/deactivating object detection feature
+            self.objectDetectionToggle = ToggleSwitch(text="    Automatic object detection", style="android")
+            self.HBL8.addWidget(self.objectDetectionToggle)
+
+        # Toggle for activating/deactivating object detection feature
+            self.objectSegmentationToggle = ToggleSwitch(text="    Automatic object segmentation", style="android")
+            self.HBL9.addWidget(self.objectSegmentationToggle)
+
         # Combine horizontal and vertical layout
             # 1) Vertially Stack Feed_Label and Pushbuttons
             self.VBL1.addLayout(self.HBL1)
@@ -151,8 +170,11 @@ class MainWindow(QWidget):
             self.VBL2.addLayout(self.HBL4)
             self.VBL2.addLayout(self.VBL4)
             self.VBL2.addLayout(self.HBL6)
+            self.VBL2.addLayout(self.HBL7)
+            self.VBL2.addLayout(self.HBL8)
+            self.VBL2.addLayout(self.HBL9)
+
             self.VBL2.addStretch()
-            # Manual selection toggle
 
             # Horizontally Stack (1) and (2)
             self.HBL5.addLayout(self.VBL1)
@@ -194,18 +216,24 @@ class MainWindow(QWidget):
         else:
             self.manSelect.setStyleSheet("background-color: lightgrey")
     
+    def sliderCallback(self):
+        print("Togled")
+
 class Worker1(QThread):
     ImageUpdate = pyqtSignal(QImage)
     def run(self):
         self.ThreadActive = True
-        Capture = nano.Camera()
-        if Capture.isReady():
-            while self.ThreadActive:
-                frame = Capture.read()
+        camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
+        display = jetson.utils.videoOutput("display://0")
+        if camera != None:
+            net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
+            while self.ThreadActive and display.IsStreaming():
+                frame = camera.Capture()
+                detections = net.Detect(frame)
+                frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
                 if np.sum(frame) != 0:
-                    Image = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-                    FlippedImage = cv.flip(Image, 1)
-                    Convert2QtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0], QImage.Format_RGB888)
+                    cvFrame = cv.cvtColor(frame.astype(np.uint8), cv.COLOR_BGR2RGB)
+                    Convert2QtFormat = QImage(cvFrame.data, cvFrame.shape[1], cvFrame.shape[0], QImage.Format_RGB888)
                     Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
                     self.ImageUpdate.emit(Pic)
                 else:
