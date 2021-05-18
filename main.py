@@ -146,6 +146,12 @@ class MainWindow(QWidget):
 
         # Toggle for activating/deactivating manual target selection feature
             self.manualSelectionToggle = ToggleSwitch(style="ios")
+            def manualSelectionSlot():
+                if self.manualSelectionToggle.isToggled():
+                    print("Manual Detection On")
+                else:
+                    print("Manual Detection Off")
+            self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
             self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
             self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
             self.grid.addWidget(self.manualSelectionToggleLabel, 0, 0)
@@ -154,6 +160,12 @@ class MainWindow(QWidget):
 
         # Toggle for activating/deactivating object detection feature
             self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
+            def objectDetectionSlot():
+                if self.objectDetectionToggle.isToggled():
+                    print("Object Detection On")
+                else:
+                    print("Object Detection Off")
+            self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
             self.objectDetectionToggleLabel = QLabel("Automatic Target Detection")
             self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
             self.grid.addWidget(self.objectDetectionToggleLabel, 1, 0)
@@ -162,6 +174,12 @@ class MainWindow(QWidget):
 
         # Toggle for activating/deactivating object detection feature
             self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
+            def objectSegmentationSlot():
+                if self.objectSegmentationToggle.isToggled():
+                    print("Object Segmentation On")
+                else:
+                    print("Object Segmentation Off")
+            self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
             self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
             self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
             self.grid.addWidget(self.objectSegmentationToggleLabel, 2, 0)
@@ -222,9 +240,6 @@ class MainWindow(QWidget):
             cv.namedWindow("CSI Camera", cv.WINDOW_NORMAL)
         else:
             self.manSelect.setStyleSheet("background-color: lightgrey")
-    
-    def sliderCallback(self):
-        print("Togled")
 
 class Worker1(QThread):
     ImageUpdate = pyqtSignal(QImage)
