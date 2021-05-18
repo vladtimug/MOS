@@ -27,7 +27,7 @@ class MainWindow(QWidget):
             self.setFixedWidth(1000)
             self.setFixedHeight(500)
             self.setStyleSheet("background-color: rgb(52, 23, 72);")
-            self.setWindowTitle("MESS")
+            self.setWindowTitle("MOS")
 
         # Config Layout
             self.HBL1 = QHBoxLayout()
@@ -44,7 +44,7 @@ class MainWindow(QWidget):
             self.VBL6 = QVBoxLayout()
 
             
-        # Stream Width & Height
+        # Stream Label Width & Height
             width = 620
             height = 480
 
@@ -58,12 +58,11 @@ class MainWindow(QWidget):
 
         # Create and add Stream Widget to window
             self.FeedLabel = QLabel()
-            # self.FeedLabel.setFixedHeight(859)
-            # self.FeedLabel.setFixedWidth(480)
-            # self.FeedLabel.setGeometry(QRect(0, 0, 720, 480))
             self.HBL1.addWidget(self.FeedLabel)
             
         # Config & Add buttons 
+        # TODO Keep the window geometry and elements fixed while the video streaming is loading after the Start button is pushed
+        # TODO Add loading widget between Start button push and loading of the stream
             # Start Button
             self.StartBTN = QPushButton("Start")
             self.StartBTN.setStyleSheet("color: white;")
