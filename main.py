@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Threads: https://www.youtube.com/watch?v=dTDgbx-XelY
 
 import sys
@@ -17,7 +18,6 @@ from pyqt5Custom import ToggleSwitch
 # panMotor = myKit.servo[15]		# Pan motor
 
 # Create main window
-# TODO Check out https://github.com/kadir014/pyqt5-custom-widgets to enhance UI
 class MainWindow(QWidget):
     def __init__(self):
         # Inherit from QWidget Obj. Super returns the parrent object -> in this case a Qwidget obj
@@ -25,7 +25,7 @@ class MainWindow(QWidget):
 
         # Size, Title & Background Config
             self.setFixedWidth(1000)
-            self.setFixedHeight(500)
+            self.setFixedHeight(430)
             self.setStyleSheet("background-color: rgb(52, 23, 72);")
             self.setWindowTitle("MOS")
 
@@ -42,7 +42,7 @@ class MainWindow(QWidget):
             self.VBL4 = QVBoxLayout()
             self.VBL5 = QVBoxLayout()
             self.VBL6 = QVBoxLayout()
-
+            self.VBL7 = QVBoxLayout()
             
         # Stream Label Width & Height
             width = 620
@@ -88,52 +88,59 @@ class MainWindow(QWidget):
             self.HBL2.addWidget(self.SnapshotBTN)
 
         # Servo Control Sliders
+            # Slider 1 Value Line
+            self.labelServo1 = QLabel("Horizontal Pan Servo Control")
+            self.labelServo1.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
+            self.VBL3.addWidget(self.labelServo1)
+            
             # Slider 1 - Pan
-            self.labelServo1 = QLabel("Pan Servo Control")
-            self.labelServo1.setStyleSheet("color: rgb(255, 255, 255);")
             self.sliderServo1 = QSlider(Qt.Horizontal)
+            self.sliderServo1.setStyleSheet("color: rgb(255, 255, 255);")
             self.sliderServo1.setMinimum(0)
             self.sliderServo1.setMaximum(180)
             self.sliderServo1.setValue(90)
             self.sliderServo1.setTickPosition(QSlider.TicksBelow)
             self.sliderServo1.setTickInterval(18)
             self.sliderServo1.setToolTip("Pan Servo Control")
-            self.HBL3.addWidget(self.labelServo1)        
-            self.HBL3.addWidget(self.sliderServo1)
-            
-            # Slider 1 Value Line
             self.servo1Line = QLineEdit()
             self.servo1Line.setFixedWidth(50)
             self.servo1Line.setStyleSheet("color: black")
             self.servo1Line.setStyleSheet("background-color: rgb(255, 255, 255)")
             self.servo1Line.setText(str(self.sliderServo1.value()))
-            self.VBL3.addWidget(self.servo1Line)
+            self.HBL3.addWidget(self.servo1Line)        
+            self.HBL3.addWidget(self.sliderServo1)
+            self.HBL3.setSpacing(30)
+            self.VBL3.addLayout(self.HBL3)
+            self.VBL3.setSpacing(10)
 
         # Display slider1 value & modify servo angle
             # self.sliderServo1.valueChanged.connect(self.v_change_servo1)
             
-        # Slider 2 - Tilt
-            self.labelServo2 = QLabel("Tilt Servo Control")
-            self.labelServo2.setStyleSheet("color: rgb(255, 255, 255);")
+            # Slider 2 Value Line
+            self.labelServo2 = QLabel("Vertical Tilt Servo Control")
+            self.labelServo2.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
+            self.VBL4.addWidget(self.labelServo2)
+
+            # Slider 2 - Tilt
             self.sliderServo2 = QSlider(Qt.Horizontal)
-            self.sliderServo2.setStyleSheet("color: rgb(255, 255, 0);")
+            self.sliderServo2.setStyleSheet("color: rgb(255, 255, 255);")
             self.sliderServo2.setMinimum(0)
             self.sliderServo2.setMaximum(180)
             self.sliderServo2.setValue(90)
             self.sliderServo2.setTickPosition(QSlider.TicksBelow)
             self.sliderServo2.setTickInterval(18)
             self.sliderServo2.setToolTip("Tilt Servo Control")
-            self.HBL4.addWidget(self.labelServo2)        
-            self.HBL4.addWidget(self.sliderServo2)
-
-        # Slider 2 Value Line
             self.servo2Line = QLineEdit()
             self.servo2Line.setFixedWidth(50)
             self.servo2Line.setStyleSheet("color: black")
             self.servo2Line.setStyleSheet("background-color: rgb(255, 255, 255)")
             self.servo2Line.setText(str(self.sliderServo2.value()))
-            self.VBL4.addWidget(self.servo2Line)
-        
+            self.HBL4.addWidget(self.servo2Line)        
+            self.HBL4.addWidget(self.sliderServo2)
+            self.HBL4.setSpacing(30)
+            self.VBL4.addLayout(self.HBL4)
+            self.VBL4.setSpacing(10)
+
         # Display slider2 value & modify servo angle
             # self.sliderServo2.valueChanged.connect(self.v_change_servo2)
 
@@ -159,7 +166,8 @@ class MainWindow(QWidget):
             self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
             self.grid.addWidget(self.objectSegmentationToggleLabel, 2, 0)
             self.grid.addWidget(self.objectSegmentationToggle, 2, 1)
-            self.VBL5.addLayout(self.grid)  
+            self.grid.setContentsMargins(0, 30, 30, 0)
+            self.VBL5.addLayout(self.grid) 
 
         # Combine horizontal and vertical layout
             # 1) Vertially Stack Feed_Label and Pushbuttons
@@ -167,10 +175,10 @@ class MainWindow(QWidget):
             self.VBL1.addLayout(self.HBL2)
 
             # 2) Vertically Stack servo control sliders and toggles
-            self.VBL6.addLayout(self.HBL3)
-            self.VBL6.addLayout(self.VBL3)
-            self.VBL6.addLayout(self.HBL4)
-            self.VBL6.addLayout(self.VBL4)
+            self.VBL7.addLayout(self.VBL3)
+            self.VBL7.addLayout(self.VBL4)
+            self.VBL7.setSpacing(30)
+            self.VBL6.addLayout(self.VBL7)
             self.VBL2.addLayout(self.VBL6)
             self.VBL2.addLayout(self.VBL5)
             self.VBL2.addStretch()
