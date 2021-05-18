@@ -26,7 +26,7 @@ class MainWindow(QWidget):
         # Size, Title & Background Config
             self.setFixedWidth(1000)
             self.setFixedHeight(500)
-            self.setStyleSheet("background-color: rgb(150,97,97);")
+            self.setStyleSheet("background-color: rgb(52, 23, 72);")
             self.setWindowTitle("MESS")
 
         # Config Layout
@@ -35,14 +35,20 @@ class MainWindow(QWidget):
             self.HBL3 = QHBoxLayout()
             self.HBL4 = QHBoxLayout()
             self.HBL5 = QHBoxLayout()
-            self.HBL6 = QHBoxLayout()
             self.HBL7 = QHBoxLayout()
             self.HBL8 = QHBoxLayout()
             self.HBL9 = QHBoxLayout()
+            self.HBL10 = QHBoxLayout()
+            self.HBL11 = QHBoxLayout()
+            self.HBL12 = QHBoxLayout()
+            self.grid = QGridLayout()
             self.VBL1 = QVBoxLayout()
             self.VBL2 = QVBoxLayout()
             self.VBL3 = QVBoxLayout()
             self.VBL4 = QVBoxLayout()
+            self.VBL5 = QVBoxLayout()
+            self.VBL6 = QVBoxLayout()
+
             
         # Stream Width & Height
             width = 620
@@ -69,7 +75,7 @@ class MainWindow(QWidget):
             self.StartBTN.setStyleSheet("color: white;")
             self.StartBTN.clicked.connect(self.StartFeed)
             self.StartBTN.setToolTip("Start Video Stream")
-            self.StartBTN.setFixedSize(QSize(230,30))
+            self.StartBTN.setFixedSize(QSize(170,30))
             self.HBL2.addWidget(self.StartBTN)
 
             # Stop Button
@@ -77,7 +83,7 @@ class MainWindow(QWidget):
             self.StopBTN.setStyleSheet("color: white;")
             self.StopBTN.clicked.connect(self.CancelFeed)
             self.StopBTN.setToolTip("Stop Video Stream")
-            self.StopBTN.setFixedSize(QSize(230,30))
+            self.StopBTN.setFixedSize(QSize(170,30))
             self.HBL2.addWidget(self.StopBTN)
 
             # Snapshot button
@@ -85,95 +91,95 @@ class MainWindow(QWidget):
             self.SnapshotBTN.setStyleSheet("color: white;")
             self.SnapshotBTN.clicked.connect(self.CancelFeed)
             self.SnapshotBTN.setToolTip("Snapshot")
-            self.SnapshotBTN.setFixedSize(QSize(230,30))
+            self.SnapshotBTN.setFixedSize(QSize(170,30))
             self.HBL2.addWidget(self.SnapshotBTN)
-            
-            # Manual Selection button
-            self.manSelect = QPushButton("Manual Selection", self)
-            self.manSelect.setCheckable(True)
-            # self.manSelect.setStyleSheet("background-color: lightgrey")
-            self.SnapshotBTN.setFixedSize(QSize(150,30))
-            self.manSelect.clicked.connect(self.changeColor)
-            self.HBL6.addWidget(self.manSelect)
 
         # Servo Control Sliders
             # Slider 1 - Pan
-            self.label_servo1 = QLabel("Pan Servo Control")
-            self.label_servo1.setStyleSheet("color: white")
-            self.servo1 = QSlider(Qt.Horizontal)
-            self.servo1.setMinimum(0)
-            self.servo1.setMaximum(180)
-            self.servo1.setValue(90)
-            self.servo1.setTickPosition(QSlider.TicksBelow)
-            self.servo1.setTickInterval(18)
-            self.servo1.setToolTip("Pan Servo Control")
-            self.HBL3.addWidget(self.label_servo1)        
-            self.HBL3.addWidget(self.servo1)
-
+            self.labelServo1 = QLabel("Pan Servo Control")
+            self.labelServo1.setStyleSheet("color: rgb(255, 255, 255);")
+            self.sliderServo1 = QSlider(Qt.Horizontal)
+            self.sliderServo1.setMinimum(0)
+            self.sliderServo1.setMaximum(180)
+            self.sliderServo1.setValue(90)
+            self.sliderServo1.setTickPosition(QSlider.TicksBelow)
+            self.sliderServo1.setTickInterval(18)
+            self.sliderServo1.setToolTip("Pan Servo Control")
+            self.HBL3.addWidget(self.labelServo1)        
+            self.HBL3.addWidget(self.sliderServo1)
+            
             # Slider 1 Value Line
-            self.servo1_line = QLineEdit()
-            self.servo1_line.setFixedWidth(50)
-            self.servo1_line.setStyleSheet("color: black")
-            self.servo1_line.setStyleSheet("background-color: rgb(0, 179, 255)")
-            self.servo1_line.setText(str(self.servo1.value()))
-            self.VBL3.addWidget(self.servo1_line)
+            self.servo1Line = QLineEdit()
+            self.servo1Line.setFixedWidth(50)
+            self.servo1Line.setStyleSheet("color: black")
+            self.servo1Line.setStyleSheet("background-color: rgb(255, 255, 255)")
+            self.servo1Line.setText(str(self.sliderServo1.value()))
+            self.VBL3.addWidget(self.servo1Line)
 
         # Display slider1 value & modify servo angle
-            # self.servo1.valueChanged.connect(self.v_change_servo1)
+            # self.sliderServo1.valueChanged.connect(self.v_change_servo1)
             
         # Slider 2 - Tilt
-            self.label_servo2 = QLabel("Tilt Servo Control")
-            self.label_servo2.setStyleSheet("color: white")
-            self.servo2 = QSlider(Qt.Horizontal)
-            self.servo2.setMinimum(0)
-            self.servo2.setMaximum(180)
-            self.servo2.setValue(90)
-            self.servo2.setTickPosition(QSlider.TicksBelow)
-            self.servo2.setTickInterval(18)
-            self.servo2.setToolTip("Tilt Servo Control")
-            self.HBL4.addWidget(self.label_servo2)        
-            self.HBL4.addWidget(self.servo2)
+            self.labelServo2 = QLabel("Tilt Servo Control")
+            self.labelServo2.setStyleSheet("color: rgb(255, 255, 255);")
+            self.sliderServo2 = QSlider(Qt.Horizontal)
+            self.sliderServo2.setStyleSheet("color: rgb(255, 255, 0);")
+            self.sliderServo2.setMinimum(0)
+            self.sliderServo2.setMaximum(180)
+            self.sliderServo2.setValue(90)
+            self.sliderServo2.setTickPosition(QSlider.TicksBelow)
+            self.sliderServo2.setTickInterval(18)
+            self.sliderServo2.setToolTip("Tilt Servo Control")
+            self.HBL4.addWidget(self.labelServo2)        
+            self.HBL4.addWidget(self.sliderServo2)
 
         # Slider 2 Value Line
-            self.servo2_line = QLineEdit()
-            self.servo2_line.setFixedWidth(50)
-            self.servo2_line.setStyleSheet("color: black")
-            self.servo2_line.setStyleSheet("background-color: rgb(0, 179, 255)")
-            self.servo2_line.setText(str(self.servo2.value()))
-            self.VBL4.addWidget(self.servo2_line)
+            self.servo2Line = QLineEdit()
+            self.servo2Line.setFixedWidth(50)
+            self.servo2Line.setStyleSheet("color: black")
+            self.servo2Line.setStyleSheet("background-color: rgb(255, 255, 255)")
+            self.servo2Line.setText(str(self.sliderServo2.value()))
+            self.VBL4.addWidget(self.servo2Line)
         
         # Display slider2 value & modify servo angle
-            # self.servo2.valueChanged.connect(self.v_change_servo2)
+            # self.sliderServo2.valueChanged.connect(self.v_change_servo2)
 
         # Toggle for activating/deactivating manual target selection feature
-            self.manualSelectionToggle = ToggleSwitch(text="    Manual Target Selection", style="android")
-            if self.manualSelectionToggle.MouseButtonPress():
-                self.sliderCallback()
-            self.HBL7.addWidget(self.manualSelectionToggle)
+            self.manualSelectionToggle = ToggleSwitch(style="ios")
+            self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
+            self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
+            self.grid.addWidget(self.manualSelectionToggleLabel, 0, 0)
+            self.grid.addWidget(self.manualSelectionToggle, 0, 1)
+            self.VBL5.addLayout(self.grid)
 
         # Toggle for activating/deactivating object detection feature
-            self.objectDetectionToggle = ToggleSwitch(text="    Automatic object detection", style="android")
-            self.HBL8.addWidget(self.objectDetectionToggle)
+            self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
+            self.objectDetectionToggleLabel = QLabel("Automatic Target Detection")
+            self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
+            self.grid.addWidget(self.objectDetectionToggleLabel, 1, 0)
+            self.grid.addWidget(self.objectDetectionToggle, 1, 1)
+            self.VBL5.addLayout(self.grid)
 
         # Toggle for activating/deactivating object detection feature
-            self.objectSegmentationToggle = ToggleSwitch(text="    Automatic object segmentation", style="android")
-            self.HBL9.addWidget(self.objectSegmentationToggle)
+            self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
+            self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
+            self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
+            self.grid.addWidget(self.objectSegmentationToggleLabel, 2, 0)
+            self.grid.addWidget(self.objectSegmentationToggle, 2, 1)
+            self.VBL5.addLayout(self.grid)  
 
         # Combine horizontal and vertical layout
             # 1) Vertially Stack Feed_Label and Pushbuttons
             self.VBL1.addLayout(self.HBL1)
             self.VBL1.addLayout(self.HBL2)
 
-            # 2) Vertically Stack servo control sliders 
-            self.VBL2.addLayout(self.HBL3)
-            self.VBL2.addLayout(self.VBL3)
-            self.VBL2.addLayout(self.HBL4)
-            self.VBL2.addLayout(self.VBL4)
-            self.VBL2.addLayout(self.HBL6)
-            self.VBL2.addLayout(self.HBL7)
-            self.VBL2.addLayout(self.HBL8)
-            self.VBL2.addLayout(self.HBL9)
-
+            # 2) Vertically Stack servo control sliders and toggles
+            self.VBL6.addLayout(self.HBL3)
+            self.VBL6.addLayout(self.VBL3)
+            self.VBL6.addLayout(self.HBL4)
+            self.VBL6.addLayout(self.VBL4)
+            self.VBL2.addLayout(self.VBL6)
+            self.VBL2.addLayout(self.VBL5)
             self.VBL2.addStretch()
 
             # Horizontally Stack (1) and (2)
