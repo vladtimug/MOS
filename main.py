@@ -156,7 +156,6 @@ class MainWindow(QWidget):
             self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
             self.grid.addWidget(self.manualSelectionToggleLabel, 0, 0)
             self.grid.addWidget(self.manualSelectionToggle, 0, 1)
-            self.VBL5.addLayout(self.grid)
 
         # Toggle for activating/deactivating object detection feature
             self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
@@ -170,7 +169,6 @@ class MainWindow(QWidget):
             self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
             self.grid.addWidget(self.objectDetectionToggleLabel, 1, 0)
             self.grid.addWidget(self.objectDetectionToggle, 1, 1)
-            self.VBL5.addLayout(self.grid)
 
         # Toggle for activating/deactivating object detection feature
             self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
