@@ -82,7 +82,7 @@ class MainWindow(QWidget):
             # Snapshot button
             self.SnapshotBTN = QPushButton("Take Picture")
             self.SnapshotBTN.setStyleSheet("color: white;")
-            self.SnapshotBTN.clicked.connect(self.CancelFeed)
+            self.SnapshotBTN.clicked.connect(self.Snapshot)
             self.SnapshotBTN.setToolTip("Snapshot")
             self.SnapshotBTN.setFixedSize(QSize(170,30))
             self.HBL2.addWidget(self.SnapshotBTN)
@@ -148,9 +148,9 @@ class MainWindow(QWidget):
             self.manualSelectionToggle = ToggleSwitch(style="ios")
             def manualSelectionSlot():
                 if self.manualSelectionToggle.isToggled():
-                    print("Manual Detection On")
+                    print("[INFO] Manual Detection On")
                 else:
-                    print("Manual Detection Off")
+                    print("[INFO] Manual Detection Off")
             self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
             self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
             self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -161,9 +161,9 @@ class MainWindow(QWidget):
             self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
             def objectDetectionSlot():
                 if self.objectDetectionToggle.isToggled():
-                    print("Object Detection On")
+                    print("[INFO] Object Detection On")
                 else:
-                    print("Object Detection Off")
+                    print("[INFO] Object Detection Off")
             self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
             self.objectDetectionToggleLabel = QLabel("Automatic Target Detection")
             self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -174,9 +174,9 @@ class MainWindow(QWidget):
             self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
             def objectSegmentationSlot():
                 if self.objectSegmentationToggle.isToggled():
-                    print("Object Segmentation On")
+                    print("[INFO] Object Segmentation On")
                 else:
-                    print("Object Segmentation Off")
+                    print("[INFO] Object Segmentation Off")
             self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
             self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
             self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -207,6 +207,7 @@ class MainWindow(QWidget):
             self.setLayout(self.HBL5)
 
     def StartFeed(self):
+        print("[INFO] Start button pressed")
         self.Worker1.start()
         self.NoStreamLabel.setHidden(True)
         self.FeedLabel.setHidden(False)
@@ -215,12 +216,14 @@ class MainWindow(QWidget):
         self.FeedLabel.setPixmap(QPixmap.fromImage(Image))
 
     def CancelFeed(self):
+        print("[INFO] Stop button pressed")
         self.Worker1.stop()
         self.FeedLabel.setHidden(True)
         self.NoStreamLabel.setHidden(False)
 
-    def SnapShoot(self):
-        pass
+    def Snapshot(self, Image):
+        print("[INFO] Snapshot button pressed")
+        self.FeedLabel.pixmap().save("./Data/test.jpg")
 
     def v_change_servo1(self):
         current_value = str(self.servo1.value())
@@ -232,12 +235,12 @@ class MainWindow(QWidget):
         self.servo2_line.setText(current_value)
         tiltMotor.angle = self.servo2.value()
 
-    def changeColor(self):
-        if self.manSelect.isChecked():
-            self.manSelect.setStyleSheet("background-color: lightblue")
-            cv.namedWindow("CSI Camera", cv.WINDOW_NORMAL)
-        else:
-            self.manSelect.setStyleSheet("background-color: lightgrey")
+    # def changeColor(self):
+    #     if self.manSelect.isChecked():
+    #         self.manSelect.setStyleSheet("background-color: lightblue")
+    #         cv.namedWindow("CSI Camera", cv.WINDOW_NORMAL)
+    #     else:
+    #         self.manSelect.setStyleSheet("background-color: lightgrey")
 
 class Worker1(QThread):
     ImageUpdate = pyqtSignal(QImage)
@@ -246,15 +249,16 @@ class Worker1(QThread):
         camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
         display = jetson.utils.videoOutput("display://0")
         if camera != None:
-            net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
+            # net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
             while self.ThreadActive and display.IsStreaming():
                 frame = camera.Capture()
-                detections = net.Detect(frame)
+                # detections = net.Detect(frame)
                 frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
                 if np.sum(frame) != 0:
                     cvFrame = cv.cvtColor(frame.astype(np.uint8), cv.COLOR_BGR2RGB)
                     Convert2QtFormat = QImage(cvFrame.data, cvFrame.shape[1], cvFrame.shape[0], QImage.Format_RGB888)
                     Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
+                    # print(type(Pic))
                     self.ImageUpdate.emit(Pic)
                 else:
                     print("Error while reading frame. Cannot load empty frame. Exist Status -1.")
