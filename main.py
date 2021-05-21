@@ -256,6 +256,7 @@ class Worker1(QThread):
             global loadDetectionModel
             global net
             self.pipelineSetUp()
+            prevFrameTime = 0
             while self.ThreadActive and self.display.IsStreaming():
                 frame = self.camera.Capture()
                 if loadDetectionModel and type(net) != None:
@@ -263,24 +264,26 @@ class Worker1(QThread):
                 frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
                 if np.sum(frame) != 0:
                     cvFrame = cv.cvtColor(frame.astype(np.uint8), cv.COLOR_BGR2RGB)
+                    newFrameTime = time.time()
+                    FPS = "FPS: " + str(int(1/(newFrameTime - prevFrameTime)))
+                    prevFrameTime = newFrameTime
+                    cv.putText(cvFrame, FPS, (7, 70), cv.FONT_HERSHEY_SIMPLEX, 2, (100, 255, 0), 2)
                     Convert2QtFormat = QImage(cvFrame.data, cvFrame.shape[1], cvFrame.shape[0], QImage.Format_RGB888)
                     Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
                     self.ImageUpdate.emit(Pic)
                 else:
                     print("\033[31;48m[DEBUG]\033[m Error while reading frame. Cannot load empty frame. Exist Status -1.")
+                
+
 
         else:
             print("\033[31;48m[DEBUG]\033[m Image processing thread has stopped. Exit status -2.")
 
     def pipelineSetUp(self):
-        print("\033[31;48m[DEBUG]\033[m Before camera object is created")
         camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
         self.camera = camera
-        print("\033[31;48m[DEBUG]\033[m After camera object is created {}".format(type(camera)))
-        print("\033[31;48m[DEBUG]\033[m Before display object is created")
         display = jetson.utils.videoOutput("display://0")
         self.display = display
-        print("\033[31;48m[DEBUG]\033[m After display object is created {}".format(type(display)))
 
     def stop(self):
         self.ThreadActive = False
