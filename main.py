@@ -2,6 +2,8 @@
 # Threads: https://www.youtube.com/watch?v=dTDgbx-XelY
 
 import sys
+
+from colorama.ansi import Style
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -11,18 +13,24 @@ import numpy as np
 import jetson.inference
 import jetson.utils
 from pyqt5Custom import ToggleSwitch
+import time
 
 # Servo setup
 # myKit = ServoKit(channels = 16)
 # tiltMotor = myKit.servo[14]		# Tilt motor
 # panMotor = myKit.servo[15]		# Pan motor
 
+loadDetectionModel = False
+net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
 # Create main window
 class MainWindow(QWidget):
     def __init__(self):
         # Inherit from QWidget Obj. Super returns the parrent object -> in this case a Qwidget obj
             super(MainWindow, self).__init__()
+            
+            self.initUI()
 
+    def initUI(self):
         # Size, Title & Background Config
             self.setFixedWidth(1000)
             self.setFixedHeight(430)
@@ -48,11 +56,12 @@ class MainWindow(QWidget):
             width = 620
             height = 480
 
-        # Instantiate & Start Additional Thread for Video Stream
+        # Instantiate Additional Thread for Video Stream
             self.Worker1 = Worker1()
         
         # Stream Placeholder
             self.NoStreamLabel = QLabel()
+            self.NoStreamLabel.setGeometry(0, 0, width, height)
             self.NoStreamLabel.setPixmap(QPixmap("no-stream.jpg").scaled(width, height, Qt.KeepAspectRatio))
             self.HBL1.addWidget(self.NoStreamLabel)
 
@@ -61,7 +70,7 @@ class MainWindow(QWidget):
             self.HBL1.addWidget(self.FeedLabel)
             
         # Config & Add buttons 
-        # TODO Keep the window geometry and elements fixed while the video streaming is loading after the Start button is pushed
+        # TODO Keep the window geometry and elements fixed while the video streaming is loading after the Start button is pressed
         # TODO Add loading widget between Start button push and loading of the stream
             # Start Button
             self.StartBTN = QPushButton("Start")
@@ -148,9 +157,9 @@ class MainWindow(QWidget):
             self.manualSelectionToggle = ToggleSwitch(style="ios")
             def manualSelectionSlot():
                 if self.manualSelectionToggle.isToggled():
-                    print("[INFO] Manual Detection On")
+                    print("\033[33;48m[INFO]\033[m Manual Detection On")
                 else:
-                    print("[INFO] Manual Detection Off")
+                    print("\033[33;48m[INFO]\033[m Manual Detection Off")
             self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
             self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
             self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -160,10 +169,13 @@ class MainWindow(QWidget):
         # Toggle for activating/deactivating object detection feature
             self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
             def objectDetectionSlot():
+                global loadDetectionModel
                 if self.objectDetectionToggle.isToggled():
-                    print("[INFO] Object Detection On")
+                    loadDetectionModel = True
+                    print("\033[33;48m[INFO]\033[m Object Detection On")
                 else:
-                    print("[INFO] Object Detection Off")
+                    loadDetectionModel = False
+                    print("\033[33;48m[INFO]\033[m Object Detection Off")
             self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
             self.objectDetectionToggleLabel = QLabel("Automatic Target Detection")
             self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -174,9 +186,9 @@ class MainWindow(QWidget):
             self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
             def objectSegmentationSlot():
                 if self.objectSegmentationToggle.isToggled():
-                    print("[INFO] Object Segmentation On")
+                    print("\033[33;48m[INFO]\033[m Object Segmentation On")
                 else:
-                    print("[INFO] Object Segmentation Off")
+                    print("\033[33;48m[INFO]\033[m Object Segmentation Off")
             self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
             self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
             self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -203,26 +215,26 @@ class MainWindow(QWidget):
             self.HBL5.addLayout(self.VBL1)
             self.HBL5.addLayout(self.VBL2)    
         
-            self.Worker1.ImageUpdate.connect(self.ImageUpdateSlot)
+            self.Worker1.ImageUpdate.connect(self.ImageUpdate)
             self.setLayout(self.HBL5)
 
     def StartFeed(self):
-        print("[INFO] Start button pressed")
-        self.Worker1.start()
         self.NoStreamLabel.setHidden(True)
+        self.Worker1.start()
         self.FeedLabel.setHidden(False)
+        print("\033[33;48m[INFO]\033[m Start button pressed")
 
-    def ImageUpdateSlot(self, Image):
+    def ImageUpdate(self, Image):
         self.FeedLabel.setPixmap(QPixmap.fromImage(Image))
 
-    def CancelFeed(self):
-        print("[INFO] Stop button pressed")
-        self.Worker1.stop()
+    def CancelFeed(self):   
+        self.Worker1.exit()
         self.FeedLabel.setHidden(True)
         self.NoStreamLabel.setHidden(False)
+        print("\033[33;48m[INFO]\033[m Stop button pressed")
 
     def Snapshot(self, Image):
-        print("[INFO] Snapshot button pressed")
+        print("\033[33;48m[INFO]\033[m Snapshot button pressed")
         self.FeedLabel.pixmap().save("./Data/test.jpg")
 
     def v_change_servo1(self):
@@ -235,44 +247,45 @@ class MainWindow(QWidget):
         self.servo2_line.setText(current_value)
         tiltMotor.angle = self.servo2.value()
 
-    # def changeColor(self):
-    #     if self.manSelect.isChecked():
-    #         self.manSelect.setStyleSheet("background-color: lightblue")
-    #         cv.namedWindow("CSI Camera", cv.WINDOW_NORMAL)
-    #     else:
-    #         self.manSelect.setStyleSheet("background-color: lightgrey")
-
 class Worker1(QThread):
     ImageUpdate = pyqtSignal(QImage)
+
     def run(self):
         self.ThreadActive = True
-        camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
-        display = jetson.utils.videoOutput("display://0")
-        if camera != None:
-            # net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
-            while self.ThreadActive and display.IsStreaming():
-                frame = camera.Capture()
-                # detections = net.Detect(frame)
+        if self.started:
+            global loadDetectionModel
+            global net
+            self.pipelineSetUp()
+            while self.ThreadActive and self.display.IsStreaming():
+                frame = self.camera.Capture()
+                if loadDetectionModel and type(net) != None:
+                    detections = net.Detect(frame)
                 frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
                 if np.sum(frame) != 0:
                     cvFrame = cv.cvtColor(frame.astype(np.uint8), cv.COLOR_BGR2RGB)
                     Convert2QtFormat = QImage(cvFrame.data, cvFrame.shape[1], cvFrame.shape[0], QImage.Format_RGB888)
                     Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
-                    # print(type(Pic))
                     self.ImageUpdate.emit(Pic)
                 else:
-                    print("Error while reading frame. Cannot load empty frame. Exist Status -1.")
-                    self.finished.emit()
+                    print("\033[31;48m[DEBUG]\033[m Error while reading frame. Cannot load empty frame. Exist Status -1.")
+
         else:
-            print("Error opening VideoCapture obj. Exit status -2.")
-            self.finished.emit()
-    
+            print("\033[31;48m[DEBUG]\033[m Image processing thread has stopped. Exit status -2.")
+
+    def pipelineSetUp(self):
+        print("\033[31;48m[DEBUG]\033[m Before camera object is created")
+        camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
+        self.camera = camera
+        print("\033[31;48m[DEBUG]\033[m After camera object is created {}".format(type(camera)))
+        print("\033[31;48m[DEBUG]\033[m Before display object is created")
+        display = jetson.utils.videoOutput("display://0")
+        self.display = display
+        print("\033[31;48m[DEBUG]\033[m After display object is created {}".format(type(display)))
+
     def stop(self):
         self.ThreadActive = False
-        self.quit()
-    
-    # def cameraDisplay(self):
-
+        if self.isRunning():
+            self.quit()
 
 if __name__ == '__main__':
     App = QApplication(sys.argv)
