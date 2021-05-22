@@ -21,7 +21,9 @@ import time
 # panMotor = myKit.servo[15]		# Pan motor
 
 loadDetectionModel = False
+loadTrackingModel = False
 net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
+tracker = cv.TrackerCSRT_create()
 
 # Create main window
 class MainWindow(QWidget):
@@ -156,10 +158,15 @@ class MainWindow(QWidget):
 		# Toggle for activating/deactivating manual target selection feature
 			self.manualSelectionToggle = ToggleSwitch(style="ios")
 			def manualSelectionSlot():
+				global loadTrackingModel
 				if self.manualSelectionToggle.isToggled():
-					print("\033[33;48m[INFO]\033[m Manual Detection On")
+					print("\033[33;48m[INFO]\033[m   Manual Detection On")
+					loadTrackingModel = True
+					
 				else:
-					print("\033[33;48m[INFO]\033[m Manual Detection Off")
+					print("\033[33;48m[INFO]\033[m   Manual Detection Off")
+					loadTrackingModel = False
+
 			self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
 			self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
 			self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -172,10 +179,11 @@ class MainWindow(QWidget):
 				global loadDetectionModel
 				if self.objectDetectionToggle.isToggled():
 					loadDetectionModel = True
-					print("\033[33;48m[INFO]\033[m Object Detection On")
+					print("\033[33;48m[INFO]\033[m   Object Detection On")
 				else:
 					loadDetectionModel = False
-					print("\033[33;48m[INFO]\033[m Object Detection Off")
+					print("\033[33;48m[INFO]\033[m   Object Detection Off")
+
 			self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
 			self.objectDetectionToggleLabel = QLabel("Automatic Target Detection")
 			self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -186,9 +194,9 @@ class MainWindow(QWidget):
 			self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
 			def objectSegmentationSlot():
 				if self.objectSegmentationToggle.isToggled():
-					print("\033[33;48m[INFO]\033[m Object Segmentation On")
+					print("\033[33;48m[INFO]\033[m   Object Segmentation On")
 				else:
-					print("\033[33;48m[INFO]\033[m Object Segmentation Off")
+					print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
 			self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
 			self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
 			self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -222,7 +230,7 @@ class MainWindow(QWidget):
 		self.NoStreamLabel.setHidden(True)
 		self.FeedLabel.setHidden(False)
 		self.Worker1.start()
-		print("\033[33;48m[INFO]\033[m Start button pressed")
+		print("\033[33;48m[INFO]\033[m   Start button pressed")
 
 	def ImageUpdate(self, Image):
 		self.FeedLabel.setPixmap(QPixmap.fromImage(Image))
@@ -231,11 +239,11 @@ class MainWindow(QWidget):
 		self.Worker1.exit()
 		self.FeedLabel.setHidden(True)
 		self.NoStreamLabel.setHidden(False)
-		print("\033[33;48m[INFO]\033[m Stop button pressed")
+		print("\033[33;48m[INFO]\033[m   Stop button pressed")
 
 	def Snapshot(self, Image):
-		print("\033[33;48m[INFO]\033[m Snapshot button pressed")
 		self.FeedLabel.pixmap().save("./Data/test.jpg")
+		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
 
 	def v_change_servo1(self):
 		current_value = str(self.servo1.value())
@@ -254,15 +262,42 @@ class Worker1(QThread):
 		self.ThreadActive = True
 		if self.started:
 			global loadDetectionModel
+			global loadTrackingModel
 			global net
 			self.pipelineSetUp()
 			prevFrameTime = 0
+			if loadTrackingModel:
+				# TODO Implement reselection of the object to track when the target is lost or
+				# TODO run object detector when target is lost (it has to be the same object)
+				global tracker
+				def drawRectangleFromBbox(frame, bbox):
+					x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+					cv.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
+					cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
+				frame = self.camera.Capture()
+				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
+				
+				# frame = cv.cvtColor("Live Stream", frame, cv.COLOR_BGR2RGB)
+				bbox = cv.selectROI(frame, False)
+				# input("Select ROI and press Enter to continue")
+				tracker.init(frame, bbox)
+				cv.destroyWindow("ROI selector")
+				
+
 			while self.ThreadActive and self.display.IsStreaming():
 				frame = self.camera.Capture()
 				if loadDetectionModel and type(net) != None:
 					detections = net.Detect(frame)
 				jetson.utils.cudaDeviceSynchronize()
 				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
+				if loadTrackingModel:
+					retVal, bbox = tracker.update(frame)
+					if retVal:
+						drawRectangleFromBbox(frame, bbox)
+					else:
+						cv.putText(frame, "Target Lost", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
+					# cv.destroyAllWindows()
+				
 				if np.sum(frame) != 0:
 					newFrameTime = time.time()
 					FPS = "FPS: " + str(int(1/(newFrameTime - prevFrameTime)))
@@ -272,9 +307,9 @@ class Worker1(QThread):
 					Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
 					self.ImageUpdate.emit(Pic)
 				else:
-					print("\033[31;48m[DEBUG]\033[m Error while reading frame. Cannot load empty frame. Exist Status -1.")
+					print("\033[31;48m[DEBUG]\033[m  Error while reading frame. Cannot load empty frame. Exist Status -1.")
 		else:
-			print("\033[31;48m[DEBUG]\033[m Image processing thread has stopped. Exit status -2.")
+			print("\033[31;48m[DEBUG]\033[m  Image processing thread has stopped. Exit status -2.")
 
 	def pipelineSetUp(self):
 		camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
