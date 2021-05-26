@@ -12,7 +12,9 @@ import cv2 as cv
 import numpy as np
 import jetson.inference
 import jetson.utils
+from segnet_utils import *
 from pyqt5Custom import ToggleSwitch
+
 import time
 
 # Servo setup
@@ -20,10 +22,17 @@ import time
 # tiltMotor = myKit.servo[14]		# Tilt motor
 # panMotor = myKit.servo[15]		# Pan motor
 
-loadDetectionModel = False
 loadTrackingModel = False
-net = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
+loadDetectionModel = False
+loadSegmentationModel = False
+
+output = jetson.utils.videoOutput()
+
 tracker = cv.TrackerCSRT_create()
+detectionNet = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
+segmentationNet = jetson.inference.segNet("fcn-resnet18-voc")
+segmentationNet.SetOverlayAlpha(150.0)
+buffers = segmentationBuffers(net = segmentationNet, stats = "store_true", visualize = "overlay")
 
 # Create main window
 class MainWindow(QWidget):
@@ -190,13 +199,16 @@ class MainWindow(QWidget):
 			self.grid.addWidget(self.objectDetectionToggleLabel, 1, 0)
 			self.grid.addWidget(self.objectDetectionToggle, 1, 1)
 
-		# Toggle for activating/deactivating object detection feature
+		# Toggle for activating/deactivating object segmentation feature
 			self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
 			def objectSegmentationSlot():
+				global loadSegmentationModel
 				if self.objectSegmentationToggle.isToggled():
 					print("\033[33;48m[INFO]\033[m   Object Segmentation On")
+					loadSegmentationModel = True
 				else:
 					print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
+					loadSegmentationModel = False
 			self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
 			self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
 			self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -242,7 +254,7 @@ class MainWindow(QWidget):
 		print("\033[33;48m[INFO]\033[m   Stop button pressed")
 
 	def Snapshot(self, Image):
-		self.FeedLabel.pixmap().save("./Data/test.jpg")
+		self.FeedLabel.pixmap().save("./Data/Images/test.jpg")
 		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
 
 	def v_change_servo1(self):
@@ -261,11 +273,15 @@ class Worker1(QThread):
 	def run(self):
 		self.ThreadActive = True
 		if self.started:
-			global loadDetectionModel
+			# global output
 			global loadTrackingModel
-			global net
+			global loadDetectionModel
+			global detectionNet
+			global loadSegmentationModel
+			global segmentationNet
 			self.pipelineSetUp()
 			prevFrameTime = 0
+
 			if loadTrackingModel:
 				# TODO Implement reselection of the object to track when the target is lost or
 				# TODO run object detector when target is lost (it has to be the same object)
@@ -282,14 +298,22 @@ class Worker1(QThread):
 				# input("Select ROI and press Enter to continue")
 				tracker.init(frame, bbox)
 				cv.destroyWindow("ROI selector")
-				
 
 			while self.ThreadActive and self.display.IsStreaming():
 				frame = self.camera.Capture()
-				if loadDetectionModel and type(net) != None:
-					detections = net.Detect(frame)
+				if loadDetectionModel and type(detectionNet) != None:
+					detections = detectionNet.Detect(frame)
+
+				if loadSegmentationModel and type(segmentationNet) != None:
+					buffers.Alloc(frame.shape, frame.format)
+					segmentationNet.Process(frame, ignore_class="void")
+					segmentationNet.Overlay(buffers.overlay, filter_mode="linear")
+					jetson.utils.cudaOverlay(buffers.overlay, buffers.overlay, 0, 0)
+					self.display.Render(buffers.output)
+
 				jetson.utils.cudaDeviceSynchronize()
 				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
+				
 				if loadTrackingModel:
 					retVal, bbox = tracker.update(frame)
 					if retVal:
