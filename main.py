@@ -8,7 +8,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import cv2 as cv
-# from adafruit_servokit import ServoKit
+from adafruit_servokit import ServoKit
 import numpy as np
 import jetson.inference
 import jetson.utils
@@ -18,9 +18,9 @@ from pyqt5Custom import ToggleSwitch
 import time
 
 # Servo setup
-# myKit = ServoKit(channels = 16)
-# tiltMotor = myKit.servo[14]		# Tilt motor
-# panMotor = myKit.servo[15]		# Pan motor
+myKit = ServoKit(channels = 16)
+tiltMotor = myKit.servo[14]		# Tilt motor
+panMotor = myKit.servo[15]		# Pan motor
 
 loadTrackingModel = False
 loadDetectionModel = False
@@ -134,7 +134,7 @@ class MainWindow(QWidget):
 			self.VBL3.setSpacing(10)
 
 		# Display slider1 value & modify servo angle
-			# self.sliderServo1.valueChanged.connect(self.v_change_servo1)
+			self.sliderServo1.valueChanged.connect(self.v_change_servo1)
 			
 			# Slider 2 Value Line
 			self.labelServo2 = QLabel("Vertical Tilt Servo Control")
@@ -162,7 +162,7 @@ class MainWindow(QWidget):
 			self.VBL4.setSpacing(10)
 
 		# Display slider2 value & modify servo angle
-			# self.sliderServo2.valueChanged.connect(self.v_change_servo2)
+			self.sliderServo2.valueChanged.connect(self.v_change_servo2)
 
 		# Toggle for activating/deactivating manual target selection feature
 			self.manualSelectionToggle = ToggleSwitch(style="ios")
@@ -258,14 +258,14 @@ class MainWindow(QWidget):
 		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
 
 	def v_change_servo1(self):
-		current_value = str(self.servo1.value())
-		self.servo1_line.setText(current_value)
-		panMotor.angle = self.servo1.value()
+		current_value = str(self.sliderServo1.value())
+		self.servo1Line.setText(current_value)
+		panMotor.angle = self.sliderServo1.value()
 
 	def v_change_servo2(self):
-		current_value = str(self.servo2.value())
-		self.servo2_line.setText(current_value)
-		tiltMotor.angle = self.servo2.value()
+		current_value = str(self.sliderServo2.value())
+		self.servo2Line.setText(current_value)
+		tiltMotor.angle = self.sliderServo2.value()
 
 class Worker1(QThread):
 	ImageUpdate = pyqtSignal(QImage)
