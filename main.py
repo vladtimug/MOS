@@ -27,13 +27,13 @@ loadDetectionModel = False
 loadSegmentationModel = False
 automaticTracking = False
 
-output = jetson.utils.videoOutput()
-
-tracker = cv.TrackerCSRT_create()
-detectionNet = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
-segmentationNet = jetson.inference.segNet("fcn-resnet18-voc")
-segmentationNet.SetOverlayAlpha(150.0)
-buffers = segmentationBuffers(net = segmentationNet, stats = "store_true", visualize = "overlay")
+def loadModels():
+	global tracker, detectionNet, segmentationNet, segmentationNet, buffers
+	tracker = cv.TrackerCSRT_create()
+	detectionNet = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
+	segmentationNet = jetson.inference.segNet("fcn-resnet18-voc")
+	segmentationNet.SetOverlayAlpha(150.0)
+	buffers = segmentationBuffers(net = segmentationNet, stats = "store_true", visualize = "overlay")
 
 # Create main window
 class MainWindow(QWidget):
@@ -43,6 +43,12 @@ class MainWindow(QWidget):
 			self.initUI()
 
 	def initUI(self):
+		# Display window in the center of the screen
+			qtRectangle = self.frameGeometry()
+			centerPoint = QDesktopWidget().availableGeometry().center()
+			qtRectangle.moveCenter(centerPoint)
+			self.move(qtRectangle.topLeft())
+
 		# Size, Title & Background Config
 			self.setFixedWidth(1000)
 			self.setFixedHeight(430)
@@ -74,7 +80,7 @@ class MainWindow(QWidget):
 		# Stream Placeholder
 			self.NoStreamLabel = QLabel()
 			self.NoStreamLabel.setGeometry(0, 0, width, height)
-			self.NoStreamLabel.setPixmap(QPixmap("no-stream.jpg").scaled(width, height, Qt.KeepAspectRatio))
+			self.NoStreamLabel.setPixmap(QPixmap("Data/no-stream.jpg").scaled(width, height, Qt.KeepAspectRatio))
 			self.HBL1.addWidget(self.NoStreamLabel)
 
 		# Create and add Stream Widget to window
@@ -358,6 +364,7 @@ class Worker1(QThread):
 									myKit.servo[tiltMotor].angle += 1
 				
 				if loadSegmentationModel and type(segmentationNet) != None:
+					# TODO Automatically remove segmentation window when segmentation toggle is turned off
 					buffers.Alloc(frame.shape, frame.format)
 					segmentationNet.Process(frame, ignore_class="void")
 					segmentationNet.Overlay(buffers.overlay, filter_mode="linear")
@@ -402,6 +409,15 @@ class Worker1(QThread):
 
 if __name__ == '__main__':
 	App = QApplication(sys.argv)
-	Root = MainWindow()
-	Root.show()
+	App.setWindowIcon(QIcon("Data/favicon.png"))
+	splashImg = QPixmap("Data/logo.png")
+	splashImg = splashImg.scaled(640, 480, Qt.KeepAspectRatio)
+	splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
+	splashScreen.setMask(splashImg.mask())
+	splashScreen.show()
+	App.processEvents()
+	loadModels()
+	MOSapp = MainWindow()
+	MOSapp.show()
+	splashScreen.finish(MOSapp)
 	sys.exit(App.exec())
