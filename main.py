@@ -19,8 +19,8 @@ import time
 
 # Servo setup
 myKit = ServoKit(channels = 16)
-tiltMotor = myKit.servo[14]		# Tilt motor
-panMotor = myKit.servo[15]		# Pan motor
+tiltMotor = 14		# Tilt motor
+panMotor = 15		# Pan motor
 
 loadTrackingModel = False
 loadDetectionModel = False
@@ -182,7 +182,7 @@ class MainWindow(QWidget):
 					self.sliderServo1.setEnabled(True)
 					self.sliderServo2.setEnabled(True)		
 					self.statusLabel.setText("No feature selected")
-					print("\033[33;48m[INFO]\033[m  Automatic Tracking Off")
+					print("\033[33;48m[INFO]\033[m   Automatic Tracking Off")
 
 			self.automaticTrackingToggle.toggled.connect(automaticTrackingSlot)
 			self.automaticTrackingLabel = QLabel("Automatic Target Tracking")
@@ -251,8 +251,7 @@ class MainWindow(QWidget):
 
 		# Separator Line
 			self.line = QFrame()
-			# self.line.setObjectName(QString.fromUtf8("line"))
-			self.line.setGeometry(QRect(630, 400, 50, 25))
+			self.line.setGeometry(QRect(630, 400, 25, 25))
 			self.line.setFrameShape(QFrame.HLine)
 			self.line.setFrameShadow(QFrame.Sunken)
 			self.VBL5.addWidget(self.line)
@@ -323,7 +322,6 @@ class Worker1(QThread):
 			prevFrameTime = 0
 
 			if loadTrackingModel:
-				# TODO Display in a status area the Tracking algorithm being used.
 				# TODO Implement reselection of the object to track when the target is lost or
 				# TODO run object detector when target is lost (it has to be the same object)
 				global tracker
@@ -340,11 +338,26 @@ class Worker1(QThread):
 			while self.ThreadActive and self.display.IsStreaming():
 				frame = self.camera.Capture()
 				if loadDetectionModel and type(detectionNet) != None:
-					# TODO Display in a status area the detection model being used and some details about it
 					detections = detectionNet.Detect(frame)
-
+					if automaticTracking:
+						xTarget, yTarget = self.frameCenter[0], self.frameCenter[1]
+						for detection in detections:
+							if detection.ClassID == 1:
+								xTarget, yTarget = detection.Center
+								print("\033[32;48m[FIND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
+								if xTarget < self.frameCenter[0]-15:		# act on pan axis
+									myKit.servo[panMotor].angle += 1
+								elif xTarget > self.frameCenter[0]+15:
+									myKit.servo[panMotor].angle -= 1
+								
+								if yTarget < self.frameCenter[1] - 15:		# act on tilt axis
+									# if myKit.servo[tiltMotor].angle < 175:
+									myKit.servo[tiltMotor].angle -= 1
+								else:
+									# if myKit.servo[tiltMotor].angle < 175:
+									myKit.servo[tiltMotor].angle += 1
+				
 				if loadSegmentationModel and type(segmentationNet) != None:
-					# TODO Display in a status area the segmentation model being used and some details about it
 					buffers.Alloc(frame.shape, frame.format)
 					segmentationNet.Process(frame, ignore_class="void")
 					segmentationNet.Overlay(buffers.overlay, filter_mode="linear")
@@ -377,6 +390,8 @@ class Worker1(QThread):
 	def pipelineSetUp(self):
 		camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
 		self.camera = camera
+		self.frameCenter = [camera.GetWidth()//2, camera.GetHeight()//2]
+		print(self.frameCenter)
 		display = jetson.utils.videoOutput("display://0")
 		self.display = display
 
