@@ -121,6 +121,7 @@ class MainWindow(QWidget):
 			self.sliderServo1.setValue(90)
 			self.sliderServo1.setTickPosition(QSlider.TicksBelow)
 			self.sliderServo1.setTickInterval(18)
+			self.sliderServo1.setSingleStep(2)
 			self.sliderServo1.setToolTip("Pan Servo Control")
 			self.servo1Line = QLineEdit()
 			self.servo1Line.setFixedWidth(50)
@@ -149,6 +150,7 @@ class MainWindow(QWidget):
 			self.sliderServo2.setValue(90)
 			self.sliderServo2.setTickPosition(QSlider.TicksBelow)
 			self.sliderServo2.setTickInterval(18)
+			self.sliderServo2.setSingleStep(2)
 			self.sliderServo2.setToolTip("Tilt Servo Control")
 			self.servo2Line = QLineEdit()
 			self.servo2Line.setFixedWidth(50)
@@ -163,6 +165,24 @@ class MainWindow(QWidget):
 
 		# Display slider2 value & modify servo angle
 			self.sliderServo2.valueChanged.connect(self.v_change_servo2)
+
+		# Toggle for activating/deactivating manual target tracking feature
+			self.automaticTrackingToggle = ToggleSwitch(style="ios")
+			def automaticTrackingSlot():
+				if self.automaticTrackingToggle.isToggled():
+					self.sliderServo1.setEnabled(False)
+					self.sliderServo2.setEnabled(False)				
+					print("\033[33;48m[INFO]\033[m   Automatic Tracking On")
+				else:
+					self.sliderServo1.setEnabled(True)
+					self.sliderServo2.setEnabled(True)					
+					print("\033[33;48m[INFO]\033[m  Automatic Tracking Off")
+
+			self.automaticTrackingToggle.toggled.connect(automaticTrackingSlot)
+			self.automaticTrackingLabel = QLabel("Automatic Target Tracking")
+			self.automaticTrackingLabel.setStyleSheet("color: white; font-size: 15px")
+			self.grid.addWidget(self.automaticTrackingLabel, 0, 0)
+			self.grid.addWidget(self.automaticTrackingToggle, 0, 1)
 
 		# Toggle for activating/deactivating manual target selection feature
 			self.manualSelectionToggle = ToggleSwitch(style="ios")
@@ -179,8 +199,8 @@ class MainWindow(QWidget):
 			self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
 			self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
 			self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
-			self.grid.addWidget(self.manualSelectionToggleLabel, 0, 0)
-			self.grid.addWidget(self.manualSelectionToggle, 0, 1)
+			self.grid.addWidget(self.manualSelectionToggleLabel, 1, 0)
+			self.grid.addWidget(self.manualSelectionToggle, 1, 1)
 
 		# Toggle for activating/deactivating object detection feature
 			self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
@@ -196,8 +216,8 @@ class MainWindow(QWidget):
 			self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
 			self.objectDetectionToggleLabel = QLabel("Automatic Target Detection")
 			self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
-			self.grid.addWidget(self.objectDetectionToggleLabel, 1, 0)
-			self.grid.addWidget(self.objectDetectionToggle, 1, 1)
+			self.grid.addWidget(self.objectDetectionToggleLabel, 2, 0)
+			self.grid.addWidget(self.objectDetectionToggle, 2, 1)
 
 		# Toggle for activating/deactivating object segmentation feature
 			self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
@@ -212,8 +232,8 @@ class MainWindow(QWidget):
 			self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
 			self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
 			self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
-			self.grid.addWidget(self.objectSegmentationToggleLabel, 2, 0)
-			self.grid.addWidget(self.objectSegmentationToggle, 2, 1)
+			self.grid.addWidget(self.objectSegmentationToggleLabel, 3, 0)
+			self.grid.addWidget(self.objectSegmentationToggle, 3, 1)
 			self.grid.setContentsMargins(0, 30, 30, 0)
 			self.VBL5.addLayout(self.grid) 
 
@@ -273,7 +293,6 @@ class Worker1(QThread):
 	def run(self):
 		self.ThreadActive = True
 		if self.started:
-			# global output
 			global loadTrackingModel
 			global loadDetectionModel
 			global detectionNet
@@ -291,11 +310,8 @@ class Worker1(QThread):
 					cv.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
 					cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 				frame = self.camera.Capture()
-				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
-				
-				# frame = cv.cvtColor("Live Stream", frame, cv.COLOR_BGR2RGB)
+				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)				
 				bbox = cv.selectROI(frame, False)
-				# input("Select ROI and press Enter to continue")
 				tracker.init(frame, bbox)
 				cv.destroyWindow("ROI selector")
 
@@ -320,7 +336,6 @@ class Worker1(QThread):
 						drawRectangleFromBbox(frame, bbox)
 					else:
 						cv.putText(frame, "Target Lost", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
-					# cv.destroyAllWindows()
 				
 				if np.sum(frame) != 0:
 					newFrameTime = time.time()
