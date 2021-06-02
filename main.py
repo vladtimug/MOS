@@ -19,8 +19,8 @@ import time
 
 # Servo setup
 myKit = ServoKit(channels = 16)
-tiltMotor = 14		# Tilt motor
-panMotor = 15		# Pan motor
+tiltMotor = myKit.servo[14]		# Tilt motor
+panMotor = myKit.servo[15]		# Pan motor
 
 loadTrackingModel = False
 loadDetectionModel = False
@@ -352,16 +352,16 @@ class Worker1(QThread):
 								xTarget, yTarget = detection.Center
 								print("\033[32;48m[FIND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
 								if xTarget < self.frameCenter[0]-15:		# act on pan axis
-									myKit.servo[panMotor].angle += 1
+									panMotor.angle += 1
 								elif xTarget > self.frameCenter[0]+15:
-									myKit.servo[panMotor].angle -= 1
+									panMotor.angle -= 1
 								
 								if yTarget < self.frameCenter[1] - 15:		# act on tilt axis
 									# if myKit.servo[tiltMotor].angle < 175:
-									myKit.servo[tiltMotor].angle -= 1
+									tiltMotor.angle -= 1
 								else:
 									# if myKit.servo[tiltMotor].angle < 175:
-									myKit.servo[tiltMotor].angle += 1
+									tiltMotor.angle += 1
 				
 				if loadSegmentationModel and type(segmentationNet) != None:
 					# TODO Automatically remove segmentation window when segmentation toggle is turned off
