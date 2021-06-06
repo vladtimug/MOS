@@ -407,16 +407,50 @@ class Worker1(QThread):
 		if self.isRunning():
 			self.quit()
 
+class Worker2(QThread):
+	def run(self):
+		splashImg = QPixmap("Data/logo.png")
+		splashImg = splashImg.scaled(640, 480, Qt.KeepAspectRatio)
+		if splashImg != None:
+			splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
+			splashScreen.setMask(splashImg.mask())
+			if splashScreen != None:
+				splashScreen.show()
+				print('SPLASHSCREEN')
+			else:
+				print('SPLASHSCREEN ERROR')
+		else:
+			print('SPLASHSCREEN IMAGE ERROR')
+		# splashScreen.showMessage("Starting now")
+		# App.processEvents()
+		# splashScreen.showMessage("Starting now second message")
+		# App.processEvents()
+
+class Worker3(QThread):
+	def run(self):
+		loadModels()
+
 if __name__ == '__main__':
 	App = QApplication(sys.argv)
 	App.setWindowIcon(QIcon("Data/favicon.png"))
+	# splashProcess = Worker2()
+	# splashProcess.run()
 	splashImg = QPixmap("Data/logo.png")
 	splashImg = splashImg.scaled(640, 480, Qt.KeepAspectRatio)
-	splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
-	splashScreen.setMask(splashImg.mask())
-	splashScreen.show()
+	if splashImg != None:
+		splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
+		splashScreen.setMask(splashImg.mask())
+		if splashScreen != None:
+			splashScreen.show()
+			print('SPLASHSCREEN')
+		else:
+			print('SPLASHSCREEN ERROR')
+	else:
+		print('SPLASHSCREEN IMAGE ERROR')
+	splashScreen.showMessage("Starting now")
 	App.processEvents()
-	loadModels()
+	modelsThread = Worker3()
+	modelsThread.run()
 	MOSapp = MainWindow()
 	MOSapp.show()
 	splashScreen.finish(MOSapp)
