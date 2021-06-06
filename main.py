@@ -322,24 +322,16 @@ class Worker1(QThread):
 
 	def run(self):
 		self.ThreadActive = True
+		initialized = False
 		if self.started:
-			global loadTrackingModel, loadDetectionModel, detectionNet, loadSegmentationModel, segmentationNet, automaticTracking
+			global loadTrackingModel, loadDetectionModel, detectionNet, loadSegmentationModel, segmentationNet, automaticTracking, tracker
 			self.pipelineSetUp()
 			prevFrameTime = 0
 
-			if loadTrackingModel:
-				# TODO Implement reselection of the object to track when the target is lost or
-				# TODO run object detector when target is lost (it has to be the same object)
-				global tracker
-				def drawRectangleFromBbox(frame, bbox):
-					x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
-					cv.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
-					cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
-				frame = self.camera.Capture()
-				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)				
-				bbox = cv.selectROI(frame, False)
-				tracker.init(frame, bbox)
-				cv.destroyWindow("ROI selector")
+			def drawRectangleFromBbox(frame, bbox):
+				x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+				cv.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
+				cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 
 			while self.ThreadActive and self.display.IsStreaming():
 				frame = self.camera.Capture()
@@ -375,6 +367,11 @@ class Worker1(QThread):
 				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
 				
 				if loadTrackingModel:
+					if not initialized:
+						bbox = cv.selectROI(frame, False)
+						tracker.init(frame, bbox)
+					initialized = True
+					cv.destroyWindow("ROI selector")
 					retVal, bbox = tracker.update(frame)
 					if retVal:
 						drawRectangleFromBbox(frame, bbox)
@@ -409,49 +406,20 @@ class Worker1(QThread):
 
 class Worker2(QThread):
 	def run(self):
-		splashImg = QPixmap("Data/logo.png")
-		splashImg = splashImg.scaled(640, 480, Qt.KeepAspectRatio)
-		if splashImg != None:
-			splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
-			splashScreen.setMask(splashImg.mask())
-			if splashScreen != None:
-				splashScreen.show()
-				print('SPLASHSCREEN')
-			else:
-				print('SPLASHSCREEN ERROR')
-		else:
-			print('SPLASHSCREEN IMAGE ERROR')
-		# splashScreen.showMessage("Starting now")
-		# App.processEvents()
-		# splashScreen.showMessage("Starting now second message")
-		# App.processEvents()
-
-class Worker3(QThread):
-	def run(self):
 		loadModels()
+
 
 if __name__ == '__main__':
 	App = QApplication(sys.argv)
 	App.setWindowIcon(QIcon("Data/favicon.png"))
-	# splashProcess = Worker2()
-	# splashProcess.run()
 	splashImg = QPixmap("Data/logo.png")
 	splashImg = splashImg.scaled(640, 480, Qt.KeepAspectRatio)
-	if splashImg != None:
-		splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
-		splashScreen.setMask(splashImg.mask())
-		if splashScreen != None:
-			splashScreen.show()
-			print('SPLASHSCREEN')
-		else:
-			print('SPLASHSCREEN ERROR')
-	else:
-		print('SPLASHSCREEN IMAGE ERROR')
-	splashScreen.showMessage("Starting now")
+	splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
+	splashScreen.show()
 	App.processEvents()
-	modelsThread = Worker3()
+	modelsThread = Worker2()
 	modelsThread.run()
 	MOSapp = MainWindow()
-	MOSapp.show()
 	splashScreen.finish(MOSapp)
+	MOSapp.show()
 	sys.exit(App.exec())
