@@ -1,9 +1,6 @@
 #!/usr/bin/python3
-# Threads: https://www.youtube.com/watch?v=dTDgbx-XelY
 
 import sys
-
-from colorama.ansi import Style
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -31,7 +28,7 @@ def loadModels():
 	global tracker, detectionNet, segmentationNet, segmentationNet, buffers
 	tracker = cv.TrackerCSRT_create()
 	detectionNet = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
-	segmentationNet = jetson.inference.segNet("fcn-resnet18-voc")
+	segmentationNet = jetson.inference.segNet("fcn-resnet18-sun")
 	segmentationNet.SetOverlayAlpha(150.0)
 	buffers = segmentationBuffers(net = segmentationNet, stats = "store_true", visualize = "overlay")
 
@@ -356,10 +353,10 @@ class Worker1(QThread):
 									tiltMotor.angle += 1
 				
 				if loadSegmentationModel and type(segmentationNet) != None:
-					# TODO Automatically remove segmentation window when segmentation toggle is turned off
+					# TODO Automatically close segmentation window when segmentation toggle is turned off
 					buffers.Alloc(frame.shape, frame.format)
 					segmentationNet.Process(frame, ignore_class="void")
-					segmentationNet.Overlay(buffers.overlay, filter_mode="linear")
+					segmentationNet.Overlay(buffers.overlay, filter_mode="point")
 					jetson.utils.cudaOverlay(buffers.overlay, buffers.overlay, 0, 0)
 					self.display.Render(buffers.output)
 
@@ -395,7 +392,6 @@ class Worker1(QThread):
 		camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
 		self.camera = camera
 		self.frameCenter = [camera.GetWidth()//2, camera.GetHeight()//2]
-		print(self.frameCenter)
 		display = jetson.utils.videoOutput("display://0")
 		self.display = display
 
