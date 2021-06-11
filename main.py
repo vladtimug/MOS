@@ -22,6 +22,7 @@ panMotor = myKit.servo[15]		# Pan motor
 loadTrackingModel = False
 loadDetectionModel = False
 loadSegmentationModel = False
+loadSegmentationModelSignal = 1
 automaticTracking = False
 
 def loadModels():
@@ -235,15 +236,17 @@ class MainWindow(QWidget):
 		# Toggle for activating/deactivating object segmentation feature
 			self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
 			def objectSegmentationSlot():
-				global loadSegmentationModel
+				global loadSegmentationModel, loadSegmentationModelSignal
 				if self.objectSegmentationToggle.isToggled():
 					loadSegmentationModel = True
+					loadSegmentationModelSignal -= 1
 					self.statusLabel.setText("Detection Model - FCN-ResNet18-VOC\nTrained on {} clases".format(segmentationNet.GetNumClasses()))
 					print("\033[33;48m[INFO]\033[m   Object Segmentation On")
 				else:
 					self.statusLabel.setText("No feature selected")
 					print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
 					loadSegmentationModel = False
+					loadSegmentationModelSignal += 1
 			self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
 			self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
 			self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
@@ -330,7 +333,7 @@ class Worker1(QThread):
 				cv.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
 				cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 
-			while self.ThreadActive and self.display.IsStreaming():
+			while self.ThreadActive:
 				frame = self.camera.Capture()
 				if loadDetectionModel and type(detectionNet) != None:
 					detections = detectionNet.Detect(frame)
@@ -339,27 +342,27 @@ class Worker1(QThread):
 						for detection in detections:
 							if detection.ClassID == 1:
 								xTarget, yTarget = detection.Center
-								print("\033[32;48m[FIND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
+								print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
 								if xTarget < self.frameCenter[0]-15:		# act on pan axis
 									panMotor.angle += 1
 								elif xTarget > self.frameCenter[0]+15:
 									panMotor.angle -= 1
 								
-								if yTarget < self.frameCenter[1] - 15:		# act on tilt axis
-									# if myKit.servo[tiltMotor].angle < 175:
+								if yTarget < self.frameCenter[1] - 10:		# act on tilt axis
 									tiltMotor.angle -= 1
-								else:
-									# if myKit.servo[tiltMotor].angle < 175:
+								elif yTarget > self.frameCenter[1]+10:
 									tiltMotor.angle += 1
-				
-				if loadSegmentationModel and type(segmentationNet) != None:
+
+				if loadSegmentationModel:
 					# TODO Automatically close segmentation window when segmentation toggle is turned off
 					buffers.Alloc(frame.shape, frame.format)
 					segmentationNet.Process(frame, ignore_class="void")
 					segmentationNet.Overlay(buffers.overlay, filter_mode="point")
 					jetson.utils.cudaOverlay(buffers.overlay, buffers.overlay, 0, 0)
 					self.display.Render(buffers.output)
-
+				else:
+					if loadSegmentationModelSignal % 2 != 0:
+						self.display.Close()
 				jetson.utils.cudaDeviceSynchronize()
 				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
 				
