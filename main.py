@@ -114,7 +114,7 @@ class MainWindow(QWidget):
 
 		# Servo Control Sliders
 			# Slider 1 Value Line
-			self.labelServo1 = QLabel("Horizontal Pan Servo Control")
+			self.labelServo1 = QLabel("Vertical Pan Servo Control")
 			self.labelServo1.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
 			self.VBL3.addWidget(self.labelServo1)
 			
@@ -143,7 +143,7 @@ class MainWindow(QWidget):
 			self.sliderServo1.valueChanged.connect(self.v_change_servo1)
 			
 			# Slider 2 Value Line
-			self.labelServo2 = QLabel("Vertical Tilt Servo Control")
+			self.labelServo2 = QLabel("Horizontal Tilt Servo Control")
 			self.labelServo2.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
 			self.VBL4.addWidget(self.labelServo2)
 
