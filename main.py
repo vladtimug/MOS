@@ -348,7 +348,7 @@ class Worker1(QThread):
 								elif xTarget > self.frameCenter[0]+15:
 									panMotor.angle -= 1
 								
-								if yTarget < self.frameCenter[1] - 10:		# act on tilt axis
+								if yTarget < self.frameCenter[1]-10:		# act on tilt axis
 									tiltMotor.angle -= 1
 								elif yTarget > self.frameCenter[1]+10:
 									tiltMotor.angle += 1
