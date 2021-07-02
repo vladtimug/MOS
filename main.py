@@ -16,8 +16,8 @@ import time
 
 # Servo setup
 myKit = ServoKit(channels = 16)
-tiltMotor = myKit.servo[14]		# Tilt motor
-panMotor = myKit.servo[15]		# Pan motor
+tiltMotor = myKit.servo[1]		# Tilt motor
+panMotor = myKit.servo[0]		# Pan motor
 
 loadTrackingModel = False
 loadDetectionModel = False
@@ -139,8 +139,8 @@ class MainWindow(QWidget):
 			self.VBL3.addLayout(self.HBL3)
 			self.VBL3.setSpacing(10)
 
-		# Display slider1 value & modify servo angle
-			self.sliderServo1.valueChanged.connect(self.v_change_servo1)
+			# Display slider1 value & modify servo angle
+			self.sliderServo1.valueChanged.connect(self.movePanServo)
 			
 			# Slider 2 Value Line
 			self.labelServo2 = QLabel("Horizontal Tilt Servo Control")
@@ -168,8 +168,8 @@ class MainWindow(QWidget):
 			self.VBL4.addLayout(self.HBL4)
 			self.VBL4.setSpacing(10)
 
-		# Display slider2 value & modify servo angle
-			self.sliderServo2.valueChanged.connect(self.v_change_servo2)
+			# Display slider2 value & modify servo angle
+			self.sliderServo2.valueChanged.connect(self.moveTiltServo)
 
 		# Toggle for activating/deactivating manual target tracking feature
 			self.automaticTrackingToggle = ToggleSwitch(style="ios")
@@ -307,12 +307,12 @@ class MainWindow(QWidget):
 		self.FeedLabel.pixmap().save("./Data/Images/test.jpg")
 		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
 
-	def v_change_servo1(self):
+	def movePanServo(self):
 		current_value = str(self.sliderServo1.value())
 		self.servo1Line.setText(current_value)
 		panMotor.angle = self.sliderServo1.value()
 
-	def v_change_servo2(self):
+	def moveTiltServo(self):
 		current_value = str(self.sliderServo2.value())
 		self.servo2Line.setText(current_value)
 		tiltMotor.angle = self.sliderServo2.value()
@@ -322,7 +322,7 @@ class Worker1(QThread):
 
 	def run(self):
 		self.ThreadActive = True
-		initialized = False
+		trackerInitialized = False
 		if self.started:
 			global loadTrackingModel, loadDetectionModel, detectionNet, loadSegmentationModel, segmentationNet, automaticTracking, tracker
 			self.pipelineSetUp()
@@ -331,27 +331,32 @@ class Worker1(QThread):
 			def drawRectangleFromBbox(frame, bbox):
 				x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
 				cv.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
+				cv.circle(frame, (x+(w)//2, y+(h)//2 ), 30, (0, 255, 255), -1)
 				cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
+
+			def followTargetAt(xTarget, yTarget):
+				if automaticTracking:
+					if xTarget > self.frameCenter[0]+15:		# act on pan axis
+						panMotor.angle -= 1
+					elif xTarget < self.frameCenter[0]-15:
+						panMotor.angle += 1
+					if yTarget < self.frameCenter[1]-10:		# act on tilt axis
+						tiltMotor.angle -= 1
+					elif yTarget > self.frameCenter[1]+10:
+						tiltMotor.angle += 1
+				else:
+					print("\033[31;48m[DEBUG]\033[m  Active tracking spawned but disabled")
 
 			while self.ThreadActive:
 				frame = self.camera.Capture()
 				if loadDetectionModel and type(detectionNet) != None:
 					detections = detectionNet.Detect(frame)
 					if automaticTracking:
-						xTarget, yTarget = self.frameCenter[0], self.frameCenter[1]
 						for detection in detections:
 							if detection.ClassID == 1:
 								xTarget, yTarget = detection.Center
+								followTargetAt(xTarget, yTarget)
 								print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
-								if xTarget < self.frameCenter[0]-15:		# act on pan axis
-									panMotor.angle += 1
-								elif xTarget > self.frameCenter[0]+15:
-									panMotor.angle -= 1
-								
-								if yTarget < self.frameCenter[1]-10:		# act on tilt axis
-									tiltMotor.angle -= 1
-								elif yTarget > self.frameCenter[1]+10:
-									tiltMotor.angle += 1
 
 				if loadSegmentationModel:
 					# TODO Automatically close segmentation window when segmentation toggle is turned off
@@ -363,16 +368,21 @@ class Worker1(QThread):
 				else:
 					if loadSegmentationModelSignal % 2 != 0:
 						self.display.Close()
+						# del self.display
+						
 				jetson.utils.cudaDeviceSynchronize()
 				frame = jetson.utils.cudaToNumpy(frame, frame.width, frame.height, 4)
 				
 				if loadTrackingModel:
-					if not initialized:
+					if not trackerInitialized:
 						bbox = cv.selectROI(frame, False)
 						tracker.init(frame, bbox)
-					initialized = True
+					trackerInitialized = True
 					cv.destroyWindow("ROI selector")
 					retVal, bbox = tracker.update(frame)
+					if trackerInitialized:
+						followTargetAt(bbox[0]+bbox[2]//2, bbox[1] + bbox[3]//2)
+						print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
 					if retVal:
 						drawRectangleFromBbox(frame, bbox)
 					else:
@@ -383,11 +393,13 @@ class Worker1(QThread):
 					FPS = "FPS: " + str(int(1/(newFrameTime - prevFrameTime)))
 					prevFrameTime = newFrameTime
 					cv.putText(frame, FPS, (7, 70), cv.FONT_HERSHEY_SIMPLEX, 2, (100, 255, 0), 2)
+					cv.circle(frame, (self.frameCenter[0], self.frameCenter[1]), 50, (0, 255, 255), -1)
 					Convert2QtFormat = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
 					Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
 					self.ImageUpdate.emit(Pic)
 				else:
 					print("\033[31;48m[DEBUG]\033[m  Error while reading frame. Cannot load empty frame. Exist Status -1.")
+				# print("\033[31;48m[DEBUG]\033[m  Frame center at", self.frameCenter)
 		else:
 			print("\033[31;48m[DEBUG]\033[m  Image processing thread has stopped. Exit status -2.")
 
