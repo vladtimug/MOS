@@ -11,7 +11,7 @@ import jetson.inference
 import jetson.utils
 from segnet_utils import *
 from pyqt5Custom import ToggleSwitch
-
+from servo.servoControl import FollowTarget
 import time
 
 # Servo setup
@@ -26,6 +26,9 @@ loadSegmentationModelSignal = 1
 automaticTracking = False
 
 def loadModels():
+	"""
+	Load session data
+	"""
 	global tracker, detectionNet, segmentationNet, segmentationNet, buffers
 	tracker = cv.TrackerCSRT_create()
 	detectionNet = jetson.inference.detectNet("ssd-mobilenet-v2", threshold = 0.5)
@@ -316,32 +319,44 @@ class MainWindow(QWidget):
 		self.NoStreamLabel.setHidden(False)
 		print("\033[33;48m[INFO]\033[m   Stop button pressed")
 
-	def Snapshot(self, Image):
+	def Snapshot(self):
 		"""
 		Record current content of the video stream label and store it locally.
 
-		Args:
-			Image (QImage): Image to store.
 		"""
 		self.FeedLabel.pixmap().save("./Data/Images/test.jpg")
 		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
 
 	def MovePanServo(self):
+		"""
+		Send command signal to the pan servo motor based on user input. Update UI visual position feedback
+		"""
 		current_value = str(self.sliderServo1.value())
 		self.servo1Line.setText(current_value)
 		panMotor.angle = self.sliderServo1.value()
 
 	def MoveTiltServo(self):
+		"""
+		Send command signal to the tilt servo motor based on user input. Update UI visual position feedback
+		"""
 		current_value = str(self.sliderServo2.value())
 		self.servo2Line.setText(current_value)
 		tiltMotor.angle = self.sliderServo2.value()
 
-from servo.servoControl import followTarget
 
 class Worker1(QThread):
+	"""Worker thread aimed to handle the video stream related tasks. Frame capturing and video processing baesd on user control.
+
+	Args:
+		QThread (QThread): Inherit from class QThread
+	"""
 	ImageUpdate = pyqtSignal(QImage)
 
 	def run(self):
+		"""
+		Handle thread responssible actions for video control and processing.
+		Invoke this method whenever a instance of the class is created.
+		"""
 		self.ThreadActive = True
 		trackerInitialized = False
 		if self.started:
@@ -349,10 +364,19 @@ class Worker1(QThread):
 			self.pipelineSetUp()
 			prevFrameTime = 0
 
-			def drawRectangleFromBbox(frame, bbox):
+			def drawRectangleFromBbox(frame, bbox, centerFlag):
+				"""Draw rectangle on a frame to highligh selection position and size.
+				Use the centerFlag parameter to control the visibility of the selection center display status.
+
+				Args:
+					frame (cvMat): Frame to draw onto
+					bbox (list): Selection bounding box instance
+					centerFlag (bool): Flag to control whether the selection cetner is displayed or not
+				"""
 				x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
 				cv.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
-				cv.circle(frame, (x+(w)//2, y+(h)//2 ), 30, (0, 255, 255), -1)
+				if centerFlag:
+					cv.circle(frame, (x+(w)//2, y+(h)//2 ), 30, (0, 255, 255), -1)
 				cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 
 			while self.ThreadActive:
@@ -363,7 +387,7 @@ class Worker1(QThread):
 						for detection in detections:
 							if detection.ClassID == 1:
 								xTarget, yTarget = detection.Center
-								followTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], xTarget, yTarget, automaticTracking)
+								FollowTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], xTarget, yTarget, automaticTracking)
 								print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
 
 				if loadSegmentationModel:
@@ -388,10 +412,10 @@ class Worker1(QThread):
 					trackerInitialized = True
 					cv.destroyWindow("ROI selector")
 					retVal, bbox = tracker.update(frame)
-					followTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, trackerInitialized)
+					FollowTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, trackerInitialized)
 					print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
 					if retVal:
-						drawRectangleFromBbox(frame, bbox)
+						drawRectangleFromBbox(frame, bbox, True)
 					else:
 						cv.putText(frame, "Target Lost", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
 				
@@ -411,6 +435,9 @@ class Worker1(QThread):
 			print("\033[31;48m[DEBUG]\033[m  Image processing thread has stopped. Exit status -2.")
 
 	def pipelineSetUp(self):
+		"""
+		Setup video streaming pipeline with appropriate arguments
+		"""
 		camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
 		self.camera = camera
 		self.frameCenter = [camera.GetWidth()//2, camera.GetHeight()//2]
@@ -418,12 +445,23 @@ class Worker1(QThread):
 		self.display = display
 
 	def stop(self):
+		"""
+		Kill current video streaming session
+		"""
 		self.ThreadActive = False
 		if self.isRunning():
 			self.quit()
 
 class Worker2(QThread):
+	"""Worker thread aimed to load the application session dependent parameters.
+
+	Args:
+		QThread (QThread): Inheritance from QThread class
+	"""
 	def run(self):
+		"""Handle thread responssible actions for tracking, detection and semantic segmentation model loading.
+		Invoke this method whenever a instance of the class is created.
+		"""
 		loadModels()
 
 
