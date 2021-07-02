@@ -36,286 +36,307 @@ def loadModels():
 # Create main window
 class MainWindow(QWidget):
 	def __init__(self):
-		# Inherit from QWidget Obj. Super returns the parrent object -> in this case a Qwidget obj
-			super(MainWindow, self).__init__()
-			self.initUI()
+		super(MainWindow, self).__init__()
+		self.initUI()
 
 	def initUI(self):
-		# Display window in the center of the screen
-			qtRectangle = self.frameGeometry()
-			centerPoint = QDesktopWidget().availableGeometry().center()
-			qtRectangle.moveCenter(centerPoint)
-			self.move(qtRectangle.topLeft())
+		"""
+		Initialize window geometry. Render the window at the center of the screen.
+		"""
+		qtRectangle = self.frameGeometry()
+		centerPoint = QDesktopWidget().availableGeometry().center()
+		qtRectangle.moveCenter(centerPoint)
+		self.move(qtRectangle.topLeft())
 
 		# Size, Title & Background Config
-			self.setFixedWidth(1000)
-			self.setFixedHeight(430)
-			self.setStyleSheet("background-color: rgb(52, 23, 72);")
-			self.setWindowTitle("MOS - Mechatronic Orientation System")
+		self.setFixedWidth(1000)
+		self.setFixedHeight(430)
+		self.setStyleSheet("background-color: rgb(52, 23, 72);")
+		self.setWindowTitle("MOS - Mechatronic Orientation System")
 
 		# Config Layout
-			self.HBL1 = QHBoxLayout()
-			self.HBL2 = QHBoxLayout()
-			self.HBL3 = QHBoxLayout()
-			self.HBL4 = QHBoxLayout()
-			self.HBL5 = QHBoxLayout()
-			self.grid = QGridLayout()
-			self.VBL1 = QVBoxLayout()
-			self.VBL2 = QVBoxLayout()
-			self.VBL3 = QVBoxLayout()
-			self.VBL4 = QVBoxLayout()
-			self.VBL5 = QVBoxLayout()
-			self.VBL6 = QVBoxLayout()
-			self.VBL7 = QVBoxLayout()
+		self.HBL1 = QHBoxLayout()
+		self.HBL2 = QHBoxLayout()
+		self.HBL3 = QHBoxLayout()
+		self.HBL4 = QHBoxLayout()
+		self.HBL5 = QHBoxLayout()
+		self.grid = QGridLayout()
+		self.VBL1 = QVBoxLayout()
+		self.VBL2 = QVBoxLayout()
+		self.VBL3 = QVBoxLayout()
+		self.VBL4 = QVBoxLayout()
+		self.VBL5 = QVBoxLayout()
+		self.VBL6 = QVBoxLayout()
+		self.VBL7 = QVBoxLayout()
 			
 		# Stream Label Width & Height
-			width = 620
-			height = 480
+		width = 620
+		height = 480
 
 		# Instantiate Additional Thread for Video Stream
-			self.Worker1 = Worker1()
+		self.Worker1 = Worker1()
 		
 		# Stream Placeholder
-			self.NoStreamLabel = QLabel()
-			self.NoStreamLabel.setGeometry(0, 0, width, height)
-			self.NoStreamLabel.setPixmap(QPixmap("Data/no-stream.jpg").scaled(width, height, Qt.KeepAspectRatio))
-			self.HBL1.addWidget(self.NoStreamLabel)
+		self.NoStreamLabel = QLabel()
+		self.NoStreamLabel.setGeometry(0, 0, width, height)
+		self.NoStreamLabel.setPixmap(QPixmap("Data/no-stream.jpg").scaled(width, height, Qt.KeepAspectRatio))
+		self.HBL1.addWidget(self.NoStreamLabel)
 
 		# Create and add Stream Widget to window
-			self.FeedLabel = QLabel()
-			self.HBL1.addWidget(self.FeedLabel)
+		self.FeedLabel = QLabel()
+		self.HBL1.addWidget(self.FeedLabel)
 			
 		# Config & Add buttons 
 		# TODO Keep the window geometry and elements fixed while the video streaming is loading after the Start button is pressed
 		# TODO Add loading widget between Start button push and loading of the stream
-			# Start Button
-			self.StartBTN = QPushButton("Start")
-			self.StartBTN.setStyleSheet("color: white;")
-			self.StartBTN.clicked.connect(self.StartFeed)
-			self.StartBTN.setToolTip("Start Video Stream")
-			self.StartBTN.setFixedSize(QSize(170,30))
-			self.HBL2.addWidget(self.StartBTN)
+		# Start Button
+		self.StartBTN = QPushButton("Start")
+		self.StartBTN.setStyleSheet("color: white;")
+		self.StartBTN.clicked.connect(self.StartFeed)
+		self.StartBTN.setToolTip("Start Video Stream")
+		self.StartBTN.setFixedSize(QSize(170,30))
+		self.HBL2.addWidget(self.StartBTN)
 
-			# Stop Button
-			self.StopBTN = QPushButton("Stop")
-			self.StopBTN.setStyleSheet("color: white;")
-			self.StopBTN.clicked.connect(self.CancelFeed)
-			self.StopBTN.setToolTip("Stop Video Stream")
-			self.StopBTN.setFixedSize(QSize(170,30))
-			self.HBL2.addWidget(self.StopBTN)
+		# Stop Button
+		self.StopBTN = QPushButton("Stop")
+		self.StopBTN.setStyleSheet("color: white;")
+		self.StopBTN.clicked.connect(self.CancelFeed)
+		self.StopBTN.setToolTip("Stop Video Stream")
+		self.StopBTN.setFixedSize(QSize(170,30))
+		self.HBL2.addWidget(self.StopBTN)
 
-			# Snapshot button
-			self.SnapshotBTN = QPushButton("Take Picture")
-			self.SnapshotBTN.setStyleSheet("color: white;")
-			self.SnapshotBTN.clicked.connect(self.Snapshot)
-			self.SnapshotBTN.setToolTip("Snapshot")
-			self.SnapshotBTN.setFixedSize(QSize(170,30))
-			self.HBL2.addWidget(self.SnapshotBTN)
+		# Snapshot button
+		self.SnapshotBTN = QPushButton("Take Picture")
+		self.SnapshotBTN.setStyleSheet("color: white;")
+		self.SnapshotBTN.clicked.connect(self.Snapshot)
+		self.SnapshotBTN.setToolTip("Snapshot")
+		self.SnapshotBTN.setFixedSize(QSize(170,30))
+		self.HBL2.addWidget(self.SnapshotBTN)
 
 		# Servo Control Sliders
-			# Slider 1 Value Line
-			self.labelServo1 = QLabel("Vertical Pan Servo Control")
-			self.labelServo1.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
-			self.VBL3.addWidget(self.labelServo1)
-			
-			# Slider 1 - Pan
-			self.sliderServo1 = QSlider(Qt.Horizontal)
-			self.sliderServo1.setStyleSheet("color: rgb(255, 255, 255);")
-			self.sliderServo1.setMinimum(0)
-			self.sliderServo1.setMaximum(180)
-			self.sliderServo1.setValue(90)
-			self.sliderServo1.setTickPosition(QSlider.TicksBelow)
-			self.sliderServo1.setTickInterval(18)
-			self.sliderServo1.setSingleStep(2)
-			self.sliderServo1.setToolTip("Pan Servo Control")
-			self.servo1Line = QLineEdit()
-			self.servo1Line.setFixedWidth(50)
-			self.servo1Line.setStyleSheet("color: black")
-			self.servo1Line.setStyleSheet("background-color: rgb(255, 255, 255)")
-			self.servo1Line.setText(str(self.sliderServo1.value()))
-			self.HBL3.addWidget(self.servo1Line)        
-			self.HBL3.addWidget(self.sliderServo1)
-			self.HBL3.setSpacing(30)
-			self.VBL3.addLayout(self.HBL3)
-			self.VBL3.setSpacing(10)
+		# Slider 1 Value Line
+		self.labelServo1 = QLabel("Vertical Pan Servo Control")
+		self.labelServo1.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
+		self.VBL3.addWidget(self.labelServo1)
+		
+		# Slider 1 - Pan
+		self.sliderServo1 = QSlider(Qt.Horizontal)
+		self.sliderServo1.setStyleSheet("color: rgb(255, 255, 255);")
+		self.sliderServo1.setMinimum(0)
+		self.sliderServo1.setMaximum(180)
+		self.sliderServo1.setValue(90)
+		self.sliderServo1.setTickPosition(QSlider.TicksBelow)
+		self.sliderServo1.setTickInterval(18)
+		self.sliderServo1.setSingleStep(2)
+		self.sliderServo1.setToolTip("Pan Servo Control")
+		self.servo1Line = QLineEdit()
+		self.servo1Line.setFixedWidth(50)
+		self.servo1Line.setStyleSheet("color: black")
+		self.servo1Line.setStyleSheet("background-color: rgb(255, 255, 255)")
+		self.servo1Line.setText(str(self.sliderServo1.value()))
+		self.HBL3.addWidget(self.servo1Line)        
+		self.HBL3.addWidget(self.sliderServo1)
+		self.HBL3.setSpacing(30)
+		self.VBL3.addLayout(self.HBL3)
+		self.VBL3.setSpacing(10)
 
-			# Display slider1 value & modify servo angle
-			self.sliderServo1.valueChanged.connect(self.movePanServo)
-			
-			# Slider 2 Value Line
-			self.labelServo2 = QLabel("Horizontal Tilt Servo Control")
-			self.labelServo2.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
-			self.VBL4.addWidget(self.labelServo2)
+		# Display slider1 value & modify servo angle
+		self.sliderServo1.valueChanged.connect(self.MovePanServo)
+		
+		# Slider 2 Value Line
+		self.labelServo2 = QLabel("Horizontal Tilt Servo Control")
+		self.labelServo2.setStyleSheet("color: rgb(255, 255, 255); font-size: 15px;")
+		self.VBL4.addWidget(self.labelServo2)
 
-			# Slider 2 - Tilt
-			self.sliderServo2 = QSlider(Qt.Horizontal)
-			self.sliderServo2.setStyleSheet("color: rgb(255, 255, 255);")
-			self.sliderServo2.setMinimum(0)
-			self.sliderServo2.setMaximum(180)
-			self.sliderServo2.setValue(90)
-			self.sliderServo2.setTickPosition(QSlider.TicksBelow)
-			self.sliderServo2.setTickInterval(18)
-			self.sliderServo2.setSingleStep(2)
-			self.sliderServo2.setToolTip("Tilt Servo Control")
-			self.servo2Line = QLineEdit()
-			self.servo2Line.setFixedWidth(50)
-			self.servo2Line.setStyleSheet("color: black")
-			self.servo2Line.setStyleSheet("background-color: rgb(255, 255, 255)")
-			self.servo2Line.setText(str(self.sliderServo2.value()))
-			self.HBL4.addWidget(self.servo2Line)        
-			self.HBL4.addWidget(self.sliderServo2)
-			self.HBL4.setSpacing(30)
-			self.VBL4.addLayout(self.HBL4)
-			self.VBL4.setSpacing(10)
+		# Slider 2 - Tilt
+		self.sliderServo2 = QSlider(Qt.Horizontal)
+		self.sliderServo2.setStyleSheet("color: rgb(255, 255, 255);")
+		self.sliderServo2.setMinimum(0)
+		self.sliderServo2.setMaximum(180)
+		self.sliderServo2.setValue(90)
+		self.sliderServo2.setTickPosition(QSlider.TicksBelow)
+		self.sliderServo2.setTickInterval(18)
+		self.sliderServo2.setSingleStep(2)
+		self.sliderServo2.setToolTip("Tilt Servo Control")
+		self.servo2Line = QLineEdit()
+		self.servo2Line.setFixedWidth(50)
+		self.servo2Line.setStyleSheet("color: black")
+		self.servo2Line.setStyleSheet("background-color: rgb(255, 255, 255)")
+		self.servo2Line.setText(str(self.sliderServo2.value()))
+		self.HBL4.addWidget(self.servo2Line)        
+		self.HBL4.addWidget(self.sliderServo2)
+		self.HBL4.setSpacing(30)
+		self.VBL4.addLayout(self.HBL4)
+		self.VBL4.setSpacing(10)
 
-			# Display slider2 value & modify servo angle
-			self.sliderServo2.valueChanged.connect(self.moveTiltServo)
+		# Display slider2 value & modify servo angle
+		self.sliderServo2.valueChanged.connect(self.MoveTiltServo)
 
 		# Toggle for activating/deactivating manual target tracking feature
-			self.automaticTrackingToggle = ToggleSwitch(style="ios")
-			def automaticTrackingSlot():
-				global automaticTracking
-				if self.automaticTrackingToggle.isToggled():
-					automaticTracking = True
-					self.sliderServo1.setEnabled(False)
-					self.sliderServo2.setEnabled(False)		
-					print("\033[33;48m[INFO]\033[m   Automatic Tracking On")
-					self.statusLabel.setText("Automated tracking enabled")
-				else:
-					automaticTracking = False
-					self.sliderServo1.setEnabled(True)
-					self.sliderServo2.setEnabled(True)		
-					self.statusLabel.setText("No feature selected")
-					print("\033[33;48m[INFO]\033[m   Automatic Tracking Off")
+		self.automaticTrackingToggle = ToggleSwitch(style="ios")
+		def automaticTrackingSlot():
+			global automaticTracking
+			if self.automaticTrackingToggle.isToggled():
+				automaticTracking = True
+				self.sliderServo1.setEnabled(False)
+				self.sliderServo2.setEnabled(False)		
+				print("\033[33;48m[INFO]\033[m   Automatic Tracking On")
+				self.statusLabel.setText("Automated tracking enabled")
+			else:
+				automaticTracking = False
+				self.sliderServo1.setEnabled(True)
+				self.sliderServo2.setEnabled(True)		
+				self.statusLabel.setText("No feature selected")
+				print("\033[33;48m[INFO]\033[m   Automatic Tracking Off")
 
-			self.automaticTrackingToggle.toggled.connect(automaticTrackingSlot)
-			self.automaticTrackingLabel = QLabel("Automatic Target Tracking")
-			self.automaticTrackingLabel.setStyleSheet("color: white; font-size: 15px")
-			self.grid.addWidget(self.automaticTrackingLabel, 0, 0)
-			self.grid.addWidget(self.automaticTrackingToggle, 0, 1)
+		self.automaticTrackingToggle.toggled.connect(automaticTrackingSlot)
+		self.automaticTrackingLabel = QLabel("Automatic Target Tracking")
+		self.automaticTrackingLabel.setStyleSheet("color: white; font-size: 15px")
+		self.grid.addWidget(self.automaticTrackingLabel, 0, 0)
+		self.grid.addWidget(self.automaticTrackingToggle, 0, 1)
 
 		# Toggle for activating/deactivating manual target selection feature
-			self.manualSelectionToggle = ToggleSwitch(style="ios")
-			def manualSelectionSlot():
-				global loadTrackingModel
-				if self.manualSelectionToggle.isToggled():
-					print("\033[33;48m[INFO]\033[m   Manual Detection On")
-					loadTrackingModel = True
-					self.statusLabel.setText("Tracking Algorithm - CSRT")
-					print("\033[33;48m[INFO]\033[m   Object Detection On")
-				else:
-					self.statusLabel.setText("No feature selected")
-					loadTrackingModel = False
-					print("\033[33;48m[INFO]\033[m   Manual Detection Off")
+		self.manualSelectionToggle = ToggleSwitch(style="ios")
+		def manualSelectionSlot():
+			global loadTrackingModel
+			if self.manualSelectionToggle.isToggled():
+				print("\033[33;48m[INFO]\033[m   Manual Detection On")
+				loadTrackingModel = True
+				self.statusLabel.setText("Tracking Algorithm - CSRT")
+				print("\033[33;48m[INFO]\033[m   Object Detection On")
+			else:
+				self.statusLabel.setText("No feature selected")
+				loadTrackingModel = False
+				print("\033[33;48m[INFO]\033[m   Manual Detection Off")
 
-			self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
-			self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
-			self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
-			self.grid.addWidget(self.manualSelectionToggleLabel, 1, 0)
-			self.grid.addWidget(self.manualSelectionToggle, 1, 1)
+		self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
+		self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
+		self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
+		self.grid.addWidget(self.manualSelectionToggleLabel, 1, 0)
+		self.grid.addWidget(self.manualSelectionToggle, 1, 1)
 
 		# Toggle for activating/deactivating object detection feature
-			self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
-			def objectDetectionSlot():
-				global loadDetectionModel
-				if self.objectDetectionToggle.isToggled():
-					loadDetectionModel = True
-					self.statusLabel.setText("Detection Model - SSD-MobileNet-V2\nTrained on {} clases".format(detectionNet.GetNumClasses()))
-					print("\033[33;48m[INFO]\033[m   Object Detection On")
-				else:
-					self.statusLabel.setText("No feature selected")
-					loadDetectionModel = False
-					print("\033[33;48m[INFO]\033[m   Object Detection Off")
+		self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
+		def objectDetectionSlot():
+			global loadDetectionModel
+			if self.objectDetectionToggle.isToggled():
+				loadDetectionModel = True
+				self.statusLabel.setText("Detection Model - SSD-MobileNet-V2\nTrained on {} clases".format(detectionNet.GetNumClasses()))
+				print("\033[33;48m[INFO]\033[m   Object Detection On")
+			else:
+				self.statusLabel.setText("No feature selected")
+				loadDetectionModel = False
+				print("\033[33;48m[INFO]\033[m   Object Detection Off")
 
-			self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
-			self.objectDetectionToggleLabel = QLabel("Automatic Target Detection", self)
-			self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
-			self.grid.addWidget(self.objectDetectionToggleLabel, 2, 0)
-			self.grid.addWidget(self.objectDetectionToggle, 2, 1)
+		self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
+		self.objectDetectionToggleLabel = QLabel("Automatic Target Detection", self)
+		self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
+		self.grid.addWidget(self.objectDetectionToggleLabel, 2, 0)
+		self.grid.addWidget(self.objectDetectionToggle, 2, 1)
 
 		# Toggle for activating/deactivating object segmentation feature
-			self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
-			def objectSegmentationSlot():
-				global loadSegmentationModel, loadSegmentationModelSignal
-				if self.objectSegmentationToggle.isToggled():
-					loadSegmentationModel = True
-					loadSegmentationModelSignal -= 1
-					self.statusLabel.setText("Detection Model - FCN-ResNet18-VOC\nTrained on {} clases".format(segmentationNet.GetNumClasses()))
-					print("\033[33;48m[INFO]\033[m   Object Segmentation On")
-				else:
-					self.statusLabel.setText("No feature selected")
-					print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
-					loadSegmentationModel = False
-					loadSegmentationModelSignal += 1
-			self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
-			self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
-			self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
-			self.grid.addWidget(self.objectSegmentationToggleLabel, 3, 0)
-			self.grid.addWidget(self.objectSegmentationToggle, 3, 1)
-			self.grid.setContentsMargins(0, 30, 30, 0)
-			self.VBL5.addLayout(self.grid)
+		self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
+		def objectSegmentationSlot():
+			global loadSegmentationModel, loadSegmentationModelSignal
+			if self.objectSegmentationToggle.isToggled():
+				loadSegmentationModel = True
+				loadSegmentationModelSignal -= 1
+				self.statusLabel.setText("Detection Model - FCN-ResNet18-VOC\nTrained on {} clases".format(segmentationNet.GetNumClasses()))
+				print("\033[33;48m[INFO]\033[m   Object Segmentation On")
+			else:
+				self.statusLabel.setText("No feature selected")
+				print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
+				loadSegmentationModel = False
+				loadSegmentationModelSignal += 1
+
+		self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
+		self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
+		self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
+		self.grid.addWidget(self.objectSegmentationToggleLabel, 3, 0)
+		self.grid.addWidget(self.objectSegmentationToggle, 3, 1)
+		self.grid.setContentsMargins(0, 30, 30, 0)
+		self.VBL5.addLayout(self.grid)
 
 		# Separator Line
-			self.line = QFrame()
-			self.line.setGeometry(QRect(630, 400, 25, 25))
-			self.line.setFrameShape(QFrame.HLine)
-			self.line.setFrameShadow(QFrame.Sunken)
-			self.VBL5.addWidget(self.line)
+		self.line = QFrame()
+		self.line.setGeometry(QRect(630, 400, 25, 25))
+		self.line.setFrameShape(QFrame.HLine)
+		self.line.setFrameShadow(QFrame.Sunken)
+		self.VBL5.addWidget(self.line)
 
 		# Status Label
-			self.statusLabel = QLabel("No feature selected")
-			self.statusLabel.setStyleSheet("color: white; font-size: 15px")
-			self.VBL5.addWidget(self.statusLabel)
+		self.statusLabel = QLabel("No feature selected")
+		self.statusLabel.setStyleSheet("color: white; font-size: 15px")
+		self.VBL5.addWidget(self.statusLabel)
 
 		# Combine horizontal and vertical layout
-			# 1) Vertially Stack Feed_Label and Pushbuttons
-			self.VBL1.addLayout(self.HBL1)
-			self.VBL1.addLayout(self.HBL2)
+		# 1) Vertially Stack Feed_Label and Pushbuttons
+		self.VBL1.addLayout(self.HBL1)
+		self.VBL1.addLayout(self.HBL2)
 
-			# 2) Vertically Stack servo control sliders and toggles
-			self.VBL7.addLayout(self.VBL3)
-			self.VBL7.addLayout(self.VBL4)
-			self.VBL7.setSpacing(30)
-			self.VBL6.addLayout(self.VBL7)
-			self.VBL2.addLayout(self.VBL6)
-			self.VBL2.addLayout(self.VBL5)
-			self.VBL2.addStretch()
+		# 2) Vertically Stack servo control sliders and toggles
+		self.VBL7.addLayout(self.VBL3)
+		self.VBL7.addLayout(self.VBL4)
+		self.VBL7.setSpacing(30)
+		self.VBL6.addLayout(self.VBL7)
+		self.VBL2.addLayout(self.VBL6)
+		self.VBL2.addLayout(self.VBL5)
+		self.VBL2.addStretch()
 
-			# Horizontally Stack (1) and (2)
-			self.HBL5.addLayout(self.VBL1)
-			self.HBL5.addLayout(self.VBL2)    
-		
-			self.Worker1.ImageUpdate.connect(self.ImageUpdate)
-			self.setLayout(self.HBL5)
+		# Horizontally Stack (1) and (2)
+		self.HBL5.addLayout(self.VBL1)
+		self.HBL5.addLayout(self.VBL2)    
+	
+		self.Worker1.ImageUpdate.connect(self.ImageUpdate)
+		self.setLayout(self.HBL5)
 
 	def StartFeed(self):
+		"""
+		Define behavior for start button. Change video stream label content and start video streaming thread.
+		"""
 		self.NoStreamLabel.setHidden(True)
 		self.FeedLabel.setHidden(False)
 		self.Worker1.start()
 		print("\033[33;48m[INFO]\033[m   Start button pressed")
 
 	def ImageUpdate(self, Image):
+		"""Update content of the video streaming label in the user interface.
+
+		Args:
+			Image (QImage): Image to update label content with
+		"""
 		self.FeedLabel.setPixmap(QPixmap.fromImage(Image))
 
-	def CancelFeed(self):   
+	def CancelFeed(self):
+		"""
+		Define behavior for stop button. Change video stream label content and stop video streaming thread.
+		"""
 		self.Worker1.exit()
 		self.FeedLabel.setHidden(True)
 		self.NoStreamLabel.setHidden(False)
 		print("\033[33;48m[INFO]\033[m   Stop button pressed")
 
 	def Snapshot(self, Image):
+		"""
+		Record current content of the video stream label and store it locally.
+
+		Args:
+			Image (QImage): Image to store.
+		"""
 		self.FeedLabel.pixmap().save("./Data/Images/test.jpg")
 		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
 
-	def movePanServo(self):
+	def MovePanServo(self):
 		current_value = str(self.sliderServo1.value())
 		self.servo1Line.setText(current_value)
 		panMotor.angle = self.sliderServo1.value()
 
-	def moveTiltServo(self):
+	def MoveTiltServo(self):
 		current_value = str(self.sliderServo2.value())
 		self.servo2Line.setText(current_value)
 		tiltMotor.angle = self.sliderServo2.value()
+
+from servo.servoControl import followTarget
 
 class Worker1(QThread):
 	ImageUpdate = pyqtSignal(QImage)
@@ -334,19 +355,6 @@ class Worker1(QThread):
 				cv.circle(frame, (x+(w)//2, y+(h)//2 ), 30, (0, 255, 255), -1)
 				cv.putText(frame, "Tracking", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 
-			def followTargetAt(xTarget, yTarget):
-				if automaticTracking:
-					if xTarget > self.frameCenter[0]+15:		# act on pan axis
-						panMotor.angle -= 1
-					elif xTarget < self.frameCenter[0]-15:
-						panMotor.angle += 1
-					if yTarget < self.frameCenter[1]-10:		# act on tilt axis
-						tiltMotor.angle -= 1
-					elif yTarget > self.frameCenter[1]+10:
-						tiltMotor.angle += 1
-				else:
-					print("\033[31;48m[DEBUG]\033[m  Active tracking spawned but disabled")
-
 			while self.ThreadActive:
 				frame = self.camera.Capture()
 				if loadDetectionModel and type(detectionNet) != None:
@@ -355,7 +363,7 @@ class Worker1(QThread):
 						for detection in detections:
 							if detection.ClassID == 1:
 								xTarget, yTarget = detection.Center
-								followTargetAt(xTarget, yTarget)
+								followTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], xTarget, yTarget, automaticTracking)
 								print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
 
 				if loadSegmentationModel:
@@ -380,9 +388,8 @@ class Worker1(QThread):
 					trackerInitialized = True
 					cv.destroyWindow("ROI selector")
 					retVal, bbox = tracker.update(frame)
-					if trackerInitialized:
-						followTargetAt(bbox[0]+bbox[2]//2, bbox[1] + bbox[3]//2)
-						print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
+					followTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, trackerInitialized)
+					print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
 					if retVal:
 						drawRectangleFromBbox(frame, bbox)
 					else:
