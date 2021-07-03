@@ -9,9 +9,9 @@ from adafruit_servokit import ServoKit
 import numpy as np
 import jetson.inference
 import jetson.utils
-from segnet_utils import *
+from components.segnet_utils import *
 from pyqt5Custom import ToggleSwitch
-from servo.servoControl import FollowTarget, MoveServo
+from components.servoControl import FollowTarget, MoveServo
 import time
 
 # Servo setup

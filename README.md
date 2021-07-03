@@ -1,17 +1,17 @@
 MOS - Mechatronic Orientation System for Mobile Robots
 
 This app is only the software component of the project.
-The second part of the project consist of the hardware as follows:
+The second part of the project consist of the hardware components as follows:
 + Pan tilt mechanism, either bought or 3d printed
 + Raspberry Pi Module V2 Camera or a usb camera
 + 2 Servos
-+ Raspberry Pi, Jetson Nano or other similar computing platform
++ Jetson Nano
 + Adafruit servo driver. I used PCA9685.
 
 Running the project
 + Step 1 - Clone this repository
-+ Step 2 - Install the dependencies
-+ Step 3 - Run the code
++ Step 2 - Install the dependencies running "pip install -r requirements.txt"
++ Step 3 - Run the code and start tracking objects
 
 To validate communication via I2C
 + Attach the logic power pins and the SCL/SDA pins from the driver to the board
