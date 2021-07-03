@@ -11,7 +11,7 @@ import jetson.inference
 import jetson.utils
 from segnet_utils import *
 from pyqt5Custom import ToggleSwitch
-from servo.servoControl import FollowTarget
+from servo.servoControl import FollowTarget, MoveServo
 import time
 
 # Servo setup
@@ -35,6 +35,54 @@ def loadModels():
 	segmentationNet = jetson.inference.segNet("fcn-resnet18-sun")
 	segmentationNet.SetOverlayAlpha(150.0)
 	buffers = segmentationBuffers(net = segmentationNet, stats = "store_true", visualize = "overlay")
+
+def automaticTrackingSlot(activeTrackingFlag, activeTrackingToggle, servoSlider1, servoSlider2, statusLabel):
+	if activeTrackingToggle.isToggled():
+		activeTrackingFlag = True
+		servoSlider1.setEnabled(False)
+		servoSlider2.setEnabled(False)		
+		print("\033[33;48m[INFO]\033[m   Active target tracking On")
+		statusLabel.setText("Active target tracking enabled")
+	else:
+		activeTrackingFlag = False
+		servoSlider1.setEnabled(True)
+		servoSlider2.setEnabled(True)		
+		statusLabel.setText("No feature selected")
+		print("\033[33;48m[INFO]\033[m   Active target tracking Off")
+
+def manualSelectionSlot(loadTrackingModelFlag, manualSelectionToggle, statusLabel):
+	if manualSelectionToggle.isToggled():
+		print("\033[33;48m[INFO]\033[m   Manual Detection On")
+		loadTrackingModelFlag = True
+		statusLabel.setText("Tracking Algorithm - CSRT")
+		print("\033[33;48m[INFO]\033[m   Object Detection On")
+	else:
+		statusLabel.setText("No feature selected")
+		loadTrackingModelFlag = False
+		print("\033[33;48m[INFO]\033[m   Manual Detection Off")
+
+def objectDetectionSlot(loadDetectionModelFlag, objectDetectionToggle, statusLabel, detectionNet):
+	if objectDetectionToggle.isToggled():
+		loadDetectionModelFlag = True
+		statusLabel.setText("Detection Model - SSD-MobileNet-V2\nTrained on {} clases".format(detectionNet.GetNumClasses()))
+		print("\033[33;48m[INFO]\033[m   Object Detection On")
+	else:
+		statusLabel.setText("No feature selected")
+		loadDetectionModelFlag = False
+		print("\033[33;48m[INFO]\033[m   Object Detection Off")
+
+def objectSegmentationSlot(loadSegmentationModelFlag, objectSegmentationToggle, statusLabel):
+	global loadSegmentationModelSignal
+	if objectSegmentationToggle.isToggled():
+		loadSegmentationModelFlag = True
+		loadSegmentationModelSignal -= 1
+		statusLabel.setText("Detection Model - FCN-ResNet18-VOC\nTrained on {} clases".format(segmentationNet.GetNumClasses()))
+		print("\033[33;48m[INFO]\033[m   Object Segmentation On")
+	else:
+		statusLabel.setText("No feature selected")
+		print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
+		loadSegmentationModelFlag = False
+		loadSegmentationModelSignal += 1
 
 # Create main window
 class MainWindow(QWidget):
@@ -144,7 +192,7 @@ class MainWindow(QWidget):
 		self.VBL3.setSpacing(10)
 
 		# Display slider1 value & modify servo angle
-		self.sliderServo1.valueChanged.connect(self.MovePanServo)
+		self.sliderServo1.valueChanged.connect(lambda:MoveServo(panMotor, self.sliderServo1.value(), self.sliderServo1, self.servo1Line))
 		
 		# Slider 2 Value Line
 		self.labelServo2 = QLabel("Horizontal Tilt Servo Control")
@@ -173,26 +221,12 @@ class MainWindow(QWidget):
 		self.VBL4.setSpacing(10)
 
 		# Display slider2 value & modify servo angle
-		self.sliderServo2.valueChanged.connect(self.MoveTiltServo)
+		self.sliderServo2.valueChanged.connect(lambda:MoveServo(tiltMotor, self.sliderServo2.value(), self.sliderServo2, self.servo2Line))
 
 		# Toggle for activating/deactivating manual target tracking feature
 		self.automaticTrackingToggle = ToggleSwitch(style="ios")
-		def automaticTrackingSlot():
-			global automaticTracking
-			if self.automaticTrackingToggle.isToggled():
-				automaticTracking = True
-				self.sliderServo1.setEnabled(False)
-				self.sliderServo2.setEnabled(False)		
-				print("\033[33;48m[INFO]\033[m   Active target tracking On")
-				self.statusLabel.setText("Active target tracking enabled")
-			else:
-				automaticTracking = False
-				self.sliderServo1.setEnabled(True)
-				self.sliderServo2.setEnabled(True)		
-				self.statusLabel.setText("No feature selected")
-				print("\033[33;48m[INFO]\033[m   Active target tracking Off")
 
-		self.automaticTrackingToggle.toggled.connect(automaticTrackingSlot)
+		self.automaticTrackingToggle.toggled.connect(lambda:automaticTrackingSlot(automaticTracking, self.automaticTrackingToggle, self.sliderServo1, self.sliderServo2, self.statusLabel))
 		self.automaticTrackingLabel = QLabel("Active Target Tracking")
 		self.automaticTrackingLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.automaticTrackingLabel, 0, 0)
@@ -200,19 +234,8 @@ class MainWindow(QWidget):
 
 		# Toggle for activating/deactivating manual target selection feature
 		self.manualSelectionToggle = ToggleSwitch(style="ios")
-		def manualSelectionSlot():
-			global loadTrackingModel
-			if self.manualSelectionToggle.isToggled():
-				print("\033[33;48m[INFO]\033[m   Manual Detection On")
-				loadTrackingModel = True
-				self.statusLabel.setText("Tracking Algorithm - CSRT")
-				print("\033[33;48m[INFO]\033[m   Object Detection On")
-			else:
-				self.statusLabel.setText("No feature selected")
-				loadTrackingModel = False
-				print("\033[33;48m[INFO]\033[m   Manual Detection Off")
 
-		self.manualSelectionToggle.toggled.connect(manualSelectionSlot)
+		self.manualSelectionToggle.toggled.connect(lambda:manualSelectionSlot(loadTrackingModel, self.manualSelectionToggle, self.statusLabel))
 		self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
 		self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.manualSelectionToggleLabel, 1, 0)
@@ -220,16 +243,6 @@ class MainWindow(QWidget):
 
 		# Toggle for activating/deactivating object detection feature
 		self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
-		def objectDetectionSlot():
-			global loadDetectionModel
-			if self.objectDetectionToggle.isToggled():
-				loadDetectionModel = True
-				self.statusLabel.setText("Detection Model - SSD-MobileNet-V2\nTrained on {} clases".format(detectionNet.GetNumClasses()))
-				print("\033[33;48m[INFO]\033[m   Object Detection On")
-			else:
-				self.statusLabel.setText("No feature selected")
-				loadDetectionModel = False
-				print("\033[33;48m[INFO]\033[m   Object Detection Off")
 
 		self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
 		self.objectDetectionToggleLabel = QLabel("Automatic Target Detection", self)
@@ -239,20 +252,7 @@ class MainWindow(QWidget):
 
 		# Toggle for activating/deactivating object segmentation feature
 		self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
-		def objectSegmentationSlot():
-			global loadSegmentationModel, loadSegmentationModelSignal
-			if self.objectSegmentationToggle.isToggled():
-				loadSegmentationModel = True
-				loadSegmentationModelSignal -= 1
-				self.statusLabel.setText("Detection Model - FCN-ResNet18-VOC\nTrained on {} clases".format(segmentationNet.GetNumClasses()))
-				print("\033[33;48m[INFO]\033[m   Object Segmentation On")
-			else:
-				self.statusLabel.setText("No feature selected")
-				print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
-				loadSegmentationModel = False
-				loadSegmentationModelSignal += 1
-
-		self.objectSegmentationToggle.toggled.connect(objectSegmentationSlot)
+		self.objectSegmentationToggle.toggled.connect(lambda:objectSegmentationSlot(loadSegmentationModel, self.objectSegmentationToggle, self.statusLabel))
 		self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
 		self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.objectSegmentationToggleLabel, 3, 0)
@@ -271,7 +271,7 @@ class MainWindow(QWidget):
 		self.statusLabel = QLabel("No feature selected")
 		self.statusLabel.setStyleSheet("color: white; font-size: 15px")
 		self.VBL5.addWidget(self.statusLabel)
-
+		
 		# Combine horizontal and vertical layout
 		# 1) Vertially Stack Feed_Label and Pushbuttons
 		self.VBL1.addLayout(self.HBL1)
@@ -326,22 +326,6 @@ class MainWindow(QWidget):
 		"""
 		self.FeedLabel.pixmap().save("./Data/Images/test.jpg")
 		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
-
-	def MovePanServo(self):
-		"""
-		Send command signal to the pan servo motor based on user input. Update UI visual position feedback
-		"""
-		current_value = str(self.sliderServo1.value())
-		self.servo1Line.setText(current_value)
-		panMotor.angle = self.sliderServo1.value()
-
-	def MoveTiltServo(self):
-		"""
-		Send command signal to the tilt servo motor based on user input. Update UI visual position feedback
-		"""
-		current_value = str(self.sliderServo2.value())
-		self.servo2Line.setText(current_value)
-		tiltMotor.angle = self.sliderServo2.value()
 
 
 class Worker1(QThread):

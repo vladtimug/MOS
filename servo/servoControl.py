@@ -12,6 +12,7 @@ def limitPos(servoPosition):
     return servoPosition
 
 def FollowTarget(panServo, tiltServo, xTarget, yTarget, frameWidth, frameHeight, enableFlag, errCoeff = 70):
+
     """Control tilt and pan axis of the mechanism to actively track objects found at xTarget and yTarget
 
     Args:
@@ -38,3 +39,26 @@ def FollowTarget(panServo, tiltServo, xTarget, yTarget, frameWidth, frameHeight,
             print("\033[31;48m[DEBUG]\033[m  Active tracking spawned but disabled")
     else:
         print("\033[31;48m[DEBUG]\033[m  No error to correct")
+
+def MoveServo(tiltServo, currentValue, servoSlider, labelText):
+		"""
+		Send command signal to a servo motor based on user input. Update UI visual position feedback
+		"""
+		labelText.setText(str(currentValue))
+		tiltServo.angle = servoSlider.value()
+
+# def MovePanServo(self):
+# 		"""
+# 		Send command signal to the pan servo motor based on user input. Update UI visual position feedback
+# 		"""
+# 		current_value = str(self.sliderServo1.value())
+# 		self.servo1Line.setText(current_value)
+# 		panMotor.angle = self.sliderServo1.value()
+
+# def MovePanServo(self):
+#     """
+#     Send command signal to the pan servo motor based on user input. Update UI visual position feedback
+#     """
+#     current_value = str(self.sliderServo1.value())
+#     self.servo1Line.setText(current_value)
+#     panMotor.angle = self.sliderServo1.value()
