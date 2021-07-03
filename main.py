@@ -183,17 +183,17 @@ class MainWindow(QWidget):
 				automaticTracking = True
 				self.sliderServo1.setEnabled(False)
 				self.sliderServo2.setEnabled(False)		
-				print("\033[33;48m[INFO]\033[m   Automatic Tracking On")
-				self.statusLabel.setText("Automated tracking enabled")
+				print("\033[33;48m[INFO]\033[m   Active target tracking On")
+				self.statusLabel.setText("Active target tracking enabled")
 			else:
 				automaticTracking = False
 				self.sliderServo1.setEnabled(True)
 				self.sliderServo2.setEnabled(True)		
 				self.statusLabel.setText("No feature selected")
-				print("\033[33;48m[INFO]\033[m   Automatic Tracking Off")
+				print("\033[33;48m[INFO]\033[m   Active target tracking Off")
 
 		self.automaticTrackingToggle.toggled.connect(automaticTrackingSlot)
-		self.automaticTrackingLabel = QLabel("Automatic Target Tracking")
+		self.automaticTrackingLabel = QLabel("Active Target Tracking")
 		self.automaticTrackingLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.automaticTrackingLabel, 0, 0)
 		self.grid.addWidget(self.automaticTrackingToggle, 0, 1)
@@ -383,12 +383,11 @@ class Worker1(QThread):
 				frame = self.camera.Capture()
 				if loadDetectionModel and type(detectionNet) != None:
 					detections = detectionNet.Detect(frame)
-					if automaticTracking:
-						for detection in detections:
-							if detection.ClassID == 1:
-								xTarget, yTarget = detection.Center
-								FollowTarget(panMotor, tiltMotor, xTarget, yTarget, self.size[0], self.size[1])
-								print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
+					for detection in detections:
+						if detection.ClassID == 1:
+							xTarget, yTarget = detection.Center
+							FollowTarget(panMotor, tiltMotor, xTarget, yTarget, self.size[0], self.size[1], automaticTracking)
+							print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
 
 				if loadSegmentationModel:
 					# TODO Automatically close segmentation window when segmentation toggle is turned off
@@ -412,7 +411,7 @@ class Worker1(QThread):
 					trackerInitialized = True
 					cv.destroyWindow("ROI selector")
 					retVal, bbox = tracker.update(frame)
-					FollowTarget(panMotor, tiltMotor, bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, self.sizep[0], self.size[1])
+					FollowTarget(panMotor, tiltMotor, bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, self.size[0], self.size[1], automaticTracking)
 					print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
 					if retVal:
 						drawRectangleFromBbox(frame, bbox, True)
