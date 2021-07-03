@@ -387,7 +387,7 @@ class Worker1(QThread):
 						for detection in detections:
 							if detection.ClassID == 1:
 								xTarget, yTarget = detection.Center
-								FollowTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], xTarget, yTarget, automaticTracking)
+								FollowTarget(panMotor, tiltMotor, xTarget, yTarget, self.size[0], self.size[1])
 								print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
 
 				if loadSegmentationModel:
@@ -412,7 +412,7 @@ class Worker1(QThread):
 					trackerInitialized = True
 					cv.destroyWindow("ROI selector")
 					retVal, bbox = tracker.update(frame)
-					FollowTarget(panMotor, tiltMotor, self.frameCenter[0], self.frameCenter[1], bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, trackerInitialized)
+					FollowTarget(panMotor, tiltMotor, bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, self.sizep[0], self.size[1])
 					print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
 					if retVal:
 						drawRectangleFromBbox(frame, bbox, True)
@@ -440,7 +440,8 @@ class Worker1(QThread):
 		"""
 		camera = jetson.utils.videoSource("csi://0", argv=["--input-flip=rotate-180"])
 		self.camera = camera
-		self.frameCenter = [camera.GetWidth()//2, camera.GetHeight()//2]
+		self.size = [camera.GetWidth(), camera.GetHeight()]
+		self.frameCenter = [self.size[0]//2, self.size[1]//2]
 		display = jetson.utils.videoOutput("display://0")
 		self.display = display
 
