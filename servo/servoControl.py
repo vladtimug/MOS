@@ -1,4 +1,12 @@
 def limitPos(servoPosition):
+    """Prevent servo position from exceeding limited range
+
+    Args:
+        servoPosition (int): Servo angle position in degrees
+
+    Returns:
+        (int): Servo position in degrees
+    """
     if servoPosition > 180:
         servoPosition = 180
     return servoPosition
