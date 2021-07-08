@@ -23,7 +23,7 @@ loadTrackingModel = False
 loadDetectionModel = False
 loadSegmentationModel = False
 loadSegmentationModelSignal = 1
-automaticTracking = False
+activeTracking = False
 
 def loadModels():
 	"""
@@ -36,52 +36,55 @@ def loadModels():
 	segmentationNet.SetOverlayAlpha(150.0)
 	buffers = segmentationBuffers(net = segmentationNet, stats = "store_true", visualize = "overlay")
 
-def automaticTrackingSlot(activeTrackingFlag, activeTrackingToggle, servoSlider1, servoSlider2, statusLabel):
+def activeTrackingSlot(activeTrackingToggle, servoSlider1, servoSlider2, statusLabel):
+	global activeTracking
 	if activeTrackingToggle.isToggled():
-		activeTrackingFlag = True
+		activeTracking = True
 		servoSlider1.setEnabled(False)
 		servoSlider2.setEnabled(False)		
 		print("\033[33;48m[INFO]\033[m   Active target tracking On")
 		statusLabel.setText("Active target tracking enabled")
 	else:
-		activeTrackingFlag = False
+		activeTracking = False
 		servoSlider1.setEnabled(True)
 		servoSlider2.setEnabled(True)		
 		statusLabel.setText("No feature selected")
 		print("\033[33;48m[INFO]\033[m   Active target tracking Off")
 
-def manualSelectionSlot(loadTrackingModelFlag, manualSelectionToggle, statusLabel):
+def manualSelectionSlot(manualSelectionToggle, statusLabel):
+	global loadTrackingModel
 	if manualSelectionToggle.isToggled():
 		print("\033[33;48m[INFO]\033[m   Manual Detection On")
-		loadTrackingModelFlag = True
+		loadTrackingModel = True
 		statusLabel.setText("Tracking Algorithm - CSRT")
 		print("\033[33;48m[INFO]\033[m   Object Detection On")
 	else:
 		statusLabel.setText("No feature selected")
-		loadTrackingModelFlag = False
+		loadTrackingModel = False
 		print("\033[33;48m[INFO]\033[m   Manual Detection Off")
 
-def objectDetectionSlot(loadDetectionModelFlag, objectDetectionToggle, statusLabel, detectionNet):
+def objectDetectionSlot(objectDetectionToggle, statusLabel, detectionNet):
+	global loadDetectionModel
 	if objectDetectionToggle.isToggled():
-		loadDetectionModelFlag = True
+		loadDetectionModel = True
 		statusLabel.setText("Detection Model - SSD-MobileNet-V2\nTrained on {} clases".format(detectionNet.GetNumClasses()))
 		print("\033[33;48m[INFO]\033[m   Object Detection On")
 	else:
 		statusLabel.setText("No feature selected")
-		loadDetectionModelFlag = False
+		loadDetectionModel = False
 		print("\033[33;48m[INFO]\033[m   Object Detection Off")
 
-def objectSegmentationSlot(loadSegmentationModelFlag, objectSegmentationToggle, statusLabel):
-	global loadSegmentationModelSignal
+def objectSegmentationSlot(objectSegmentationToggle, statusLabel):
+	global loadSegmentationModelSignal, loadSegmentationModel
 	if objectSegmentationToggle.isToggled():
-		loadSegmentationModelFlag = True
+		loadSegmentationModel = True
 		loadSegmentationModelSignal -= 1
 		statusLabel.setText("Detection Model - FCN-ResNet18-VOC\nTrained on {} clases".format(segmentationNet.GetNumClasses()))
 		print("\033[33;48m[INFO]\033[m   Object Segmentation On")
 	else:
 		statusLabel.setText("No feature selected")
 		print("\033[33;48m[INFO]\033[m   Object Segmentation Off")
-		loadSegmentationModelFlag = False
+		loadSegmentationModel = False
 		loadSegmentationModelSignal += 1
 
 # Create main window
@@ -224,18 +227,18 @@ class MainWindow(QWidget):
 		self.sliderServo2.valueChanged.connect(lambda:MoveServo(tiltMotor, self.sliderServo2.value(), self.sliderServo2, self.servo2Line))
 
 		# Toggle for activating/deactivating manual target tracking feature
-		self.automaticTrackingToggle = ToggleSwitch(style="ios")
+		self.activeTrackingToggle = ToggleSwitch(style="ios")
 
-		self.automaticTrackingToggle.toggled.connect(lambda:automaticTrackingSlot(automaticTracking, self.automaticTrackingToggle, self.sliderServo1, self.sliderServo2, self.statusLabel))
+		self.activeTrackingToggle.toggled.connect(lambda:activeTrackingSlot(self.activeTrackingToggle, self.sliderServo1, self.sliderServo2, self.statusLabel))
 		self.automaticTrackingLabel = QLabel("Active Target Tracking")
 		self.automaticTrackingLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.automaticTrackingLabel, 0, 0)
-		self.grid.addWidget(self.automaticTrackingToggle, 0, 1)
+		self.grid.addWidget(self.activeTrackingToggle, 0, 1)
 
 		# Toggle for activating/deactivating manual target selection feature
 		self.manualSelectionToggle = ToggleSwitch(style="ios")
 
-		self.manualSelectionToggle.toggled.connect(lambda:manualSelectionSlot(loadTrackingModel, self.manualSelectionToggle, self.statusLabel))
+		self.manualSelectionToggle.toggled.connect(lambda:manualSelectionSlot(self.manualSelectionToggle, self.statusLabel))
 		self.manualSelectionToggleLabel = QLabel("Manual Target Detection")
 		self.manualSelectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.manualSelectionToggleLabel, 1, 0)
@@ -244,7 +247,7 @@ class MainWindow(QWidget):
 		# Toggle for activating/deactivating object detection feature
 		self.objectDetectionToggle = ToggleSwitch(text="", style="ios")
 
-		self.objectDetectionToggle.toggled.connect(objectDetectionSlot)
+		self.objectDetectionToggle.toggled.connect(lambda:objectDetectionSlot(self.objectDetectionToggle, self.statusLabel, detectionNet))
 		self.objectDetectionToggleLabel = QLabel("Automatic Target Detection", self)
 		self.objectDetectionToggleLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.objectDetectionToggleLabel, 2, 0)
@@ -252,7 +255,7 @@ class MainWindow(QWidget):
 
 		# Toggle for activating/deactivating object segmentation feature
 		self.objectSegmentationToggle = ToggleSwitch(text="", style="ios")
-		self.objectSegmentationToggle.toggled.connect(lambda:objectSegmentationSlot(loadSegmentationModel, self.objectSegmentationToggle, self.statusLabel))
+		self.objectSegmentationToggle.toggled.connect(lambda:objectSegmentationSlot(self.objectSegmentationToggle, self.statusLabel))
 		self.objectSegmentationToggleLabel = QLabel("Automatic Target Segmentation")
 		self.objectSegmentationToggleLabel.setStyleSheet("color: white; font-size: 15px")
 		self.grid.addWidget(self.objectSegmentationToggleLabel, 3, 0)
@@ -344,7 +347,7 @@ class ImageWorker(QThread):
 		self.ThreadActive = True
 		trackerInitialized = False
 		if self.started:
-			global loadTrackingModel, loadDetectionModel, detectionNet, loadSegmentationModel, segmentationNet, automaticTracking, tracker
+			global loadTrackingModel, loadDetectionModel, detectionNet, loadSegmentationModel, segmentationNet, activeTracking, tracker
 			self.pipelineSetUp()
 			prevFrameTime = 0
 
@@ -370,7 +373,7 @@ class ImageWorker(QThread):
 					for detection in detections:
 						if detection.ClassID == 1:
 							xTarget, yTarget = detection.Center
-							FollowTarget(panMotor, tiltMotor, xTarget, yTarget, self.size[0], self.size[1], automaticTracking)
+							FollowTarget(panMotor, tiltMotor, xTarget, yTarget, self.size[0], self.size[1], activeTracking)
 							print("\033[32;48m[FOUND]\033[m   Person detected at: {}, {}".format(xTarget, yTarget))
 
 				if loadSegmentationModel:
@@ -395,7 +398,7 @@ class ImageWorker(QThread):
 					trackerInitialized = True
 					cv.destroyWindow("ROI selector")
 					retVal, bbox = tracker.update(frame)
-					FollowTarget(panMotor, tiltMotor, bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, self.size[0], self.size[1], automaticTracking)
+					FollowTarget(panMotor, tiltMotor, bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, self.size[0], self.size[1], activeTracking)
 					print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
 					if retVal:
 						drawRectangleFromBbox(frame, bbox, False)
