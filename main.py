@@ -125,7 +125,7 @@ class MainWindow(QWidget):
 		height = 480
 
 		# Instantiate Additional Thread for Video Stream
-		self.Worker1 = Worker1()
+		self.ImageWorker = ImageWorker()
 		
 		# Stream Placeholder
 		self.NoStreamLabel = QLabel()
@@ -290,7 +290,7 @@ class MainWindow(QWidget):
 		self.HBL5.addLayout(self.VBL1)
 		self.HBL5.addLayout(self.VBL2)    
 	
-		self.Worker1.ImageUpdate.connect(self.ImageUpdate)
+		self.ImageWorker.ImageUpdate.connect(self.ImageUpdate)
 		self.setLayout(self.HBL5)
 
 	def StartFeed(self):
@@ -299,7 +299,7 @@ class MainWindow(QWidget):
 		"""
 		self.NoStreamLabel.setHidden(True)
 		self.FeedLabel.setHidden(False)
-		self.Worker1.start()
+		self.ImageWorker.start()
 		print("\033[33;48m[INFO]\033[m   Start button pressed")
 
 	def ImageUpdate(self, Image):
@@ -314,7 +314,7 @@ class MainWindow(QWidget):
 		"""
 		Define behavior for stop button. Change video stream label content and stop video streaming thread.
 		"""
-		self.Worker1.exit()
+		self.ImageWorker.exit()
 		self.FeedLabel.setHidden(True)
 		self.NoStreamLabel.setHidden(False)
 		print("\033[33;48m[INFO]\033[m   Stop button pressed")
@@ -328,7 +328,7 @@ class MainWindow(QWidget):
 		print("\033[33;48m[INFO]\033[m   Snapshot button pressed")
 
 
-class Worker1(QThread):
+class ImageWorker(QThread):
 	"""Worker thread aimed to handle the video stream related tasks. Frame capturing and video processing baesd on user control.
 
 	Args:
@@ -398,7 +398,7 @@ class Worker1(QThread):
 					FollowTarget(panMotor, tiltMotor, bbox[0] + bbox[2]//2, bbox[1] + bbox[3]//2, self.size[0], self.size[1], automaticTracking)
 					print("\033[32;48m[FOUND]\033[m   Target center selected at: {}, {}".format(bbox[0]+(bbox[2]-bbox[0])/2, bbox[1] + (bbox[3]-bbox[1])/2))
 					if retVal:
-						drawRectangleFromBbox(frame, bbox, True)
+						drawRectangleFromBbox(frame, bbox, False)
 					else:
 						cv.putText(frame, "Target Lost", (7, 150), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2)
 				
@@ -407,7 +407,7 @@ class Worker1(QThread):
 					FPS = "FPS: " + str(int(1/(newFrameTime - prevFrameTime)))
 					prevFrameTime = newFrameTime
 					cv.putText(frame, FPS, (7, 70), cv.FONT_HERSHEY_SIMPLEX, 2, (100, 255, 0), 2)
-					cv.circle(frame, (self.frameCenter[0], self.frameCenter[1]), 50, (0, 255, 255), -1)
+					# cv.circle(frame, (self.frameCenter[0], self.frameCenter[1]), 50, (0, 255, 255), -1)
 					Convert2QtFormat = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
 					Pic = Convert2QtFormat.scaled(620, 480, Qt.KeepAspectRatio)
 					self.ImageUpdate.emit(Pic)
@@ -436,7 +436,7 @@ class Worker1(QThread):
 		if self.isRunning():
 			self.quit()
 
-class Worker2(QThread):
+class LoadingWorker(QThread):
 	"""Worker thread aimed to load the application session dependent parameters.
 
 	Args:
@@ -457,7 +457,7 @@ if __name__ == '__main__':
 	splashScreen = QSplashScreen(splashImg, Qt.WindowStaysOnTopHint)
 	splashScreen.show()
 	App.processEvents()
-	modelsThread = Worker2()
+	modelsThread = LoadingWorker()
 	modelsThread.run()
 	MOSapp = MainWindow()
 	splashScreen.finish(MOSapp)

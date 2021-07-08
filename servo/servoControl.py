@@ -46,19 +46,3 @@ def MoveServo(tiltServo, currentValue, servoSlider, labelText):
 		"""
 		labelText.setText(str(currentValue))
 		tiltServo.angle = servoSlider.value()
-
-# def MovePanServo(self):
-# 		"""
-# 		Send command signal to the pan servo motor based on user input. Update UI visual position feedback
-# 		"""
-# 		current_value = str(self.sliderServo1.value())
-# 		self.servo1Line.setText(current_value)
-# 		panMotor.angle = self.sliderServo1.value()
-
-# def MovePanServo(self):
-#     """
-#     Send command signal to the pan servo motor based on user input. Update UI visual position feedback
-#     """
-#     current_value = str(self.sliderServo1.value())
-#     self.servo1Line.setText(current_value)
-#     panMotor.angle = self.sliderServo1.value()
